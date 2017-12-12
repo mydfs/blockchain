@@ -197,7 +197,7 @@ contract MyDFSGame {
 			}
 			place += tmpArraySize;
 		}
-		//TODO send fee to us
+		gameToken.transfer(gameServer, gameToken.balanceOf(address(this)));
     }
 
     function hasBeneficiary(address user) public constant returns (bool has){
