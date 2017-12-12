@@ -10,6 +10,12 @@ interface Token {
 interface Stats {
 	function approve(address gameContract) public;
 	function incStat(address user, bool win, uint256 entrySum, uint256 prize) public;
+	function getFeePercent(address user) public constant returns (uint16 fee);
+}
+
+interface Broker {
+	function transferFrom(address beneficiary, address user, address to, uint256 value) public returns (bool success);
+	function allowance(address owner, address spender) public constant returns (uint256 remaining);
 }
 
 contract MyDFSGame {
@@ -33,6 +39,7 @@ contract MyDFSGame {
 	address gameServer;
 	Token gameToken;
 	Stats stats;
+	Broker broker;
 
 	uint8 public serviceFee;
 
@@ -45,12 +52,14 @@ contract MyDFSGame {
 
 	mapping(int48 => int48) public scores;
 	mapping(int48 => mapping (int48 => int48)) public rules;
+	mapping(address => address) public beneficiaries;
 
 	function MyDFSGame(
 		uint64 id,
 		uint32 gameEntryValue,
 		address gameTokenAddress,
 		address statsAddress,
+		address brokerAddress,
 		uint8 serviceFeeValue,
 		uint8[] smallGameWinnersPercents,
 		uint8[] largeGameWinnersPercents) public {
@@ -61,22 +70,37 @@ contract MyDFSGame {
 		gameToken = Token(gameTokenAddress);
 
 		stats = Stats(statsAddress);
-		stats.approve(address(this));
+
+		broker = Broker(brokerAddress);
 
 		smallGameRules = smallGameWinnersPercents;
 		largeGameRules = largeGameWinnersPercents;
         
 		gameState = State.TeamCreation;
 	}
+	//call after create
+	//stats.approve(<game address>);
+
 
 	modifier owned() { if (msg.sender == gameServer) _; }
 	modifier beforeStart() { if (gameState == State.TeamCreation) _; }
 	modifier inProgress() { if (gameState == State.InProgress) _; }
 
+	//call this method before participate
+	//gameToken.approve(<game address>, gameEntry);
 	function participate(int48[] team) public beforeStart {
 		if (gameToken.balanceOf(msg.sender) >= gameEntry){
-			gameToken.approve(address(this), gameEntry);
 			gameToken.transferFrom(msg.sender, address(this), gameEntry);
+			players.push(Player(msg.sender, team, 0, 0));
+		} else {
+			revert();
+		}
+	}
+
+	function participateBeneficiary(int48[] team, address beneficiary) public beforeStart {
+		if (broker.allowance(beneficiary, msg.sender) >= gameEntry){
+			broker.transferFrom(beneficiary, msg.sender, address(this), gameEntry);
+			beneficiaries[msg.sender] = beneficiary;
 			players.push(Player(msg.sender, team, 0, 0));
 		} else {
 			revert();
@@ -162,10 +186,22 @@ contract MyDFSGame {
 			}
 			for (uint32 wIndex = 0; wIndex < tmpArraySize; wIndex++) {
 				players[tmpArray[wIndex]].prize = (uint48)(prize) * placePrizePercent / (100 * tmpArraySize);
-				gameToken.transfer(players[tmpArray[wIndex]].user, players[tmpArray[wIndex]].prize);
+				if (hasBeneficiary(players[tmpArray[wIndex]].user)){
+					uint256 userPrize = stats.getFeePercent(players[tmpArray[wIndex]].user) * players[tmpArray[wIndex]].prize / 100;
+					uint256 beneficiaryPrize = players[tmpArray[wIndex]].prize - userPrize;
+					gameToken.transfer(players[tmpArray[wIndex]].user, userPrize);
+					gameToken.transfer(beneficiaries[players[tmpArray[wIndex]].user], beneficiaryPrize);
+				} else {
+					gameToken.transfer(players[tmpArray[wIndex]].user, players[tmpArray[wIndex]].prize);
+				}
 			}
 			place += tmpArraySize;
 		}
+		//TODO send fee to us
+    }
+
+    function hasBeneficiary(address user) public constant returns (bool has){
+    	return beneficiaries[user] > 0x0;
     }
     
     function updateUsersStats() internal {
