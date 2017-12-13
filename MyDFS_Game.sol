@@ -23,12 +23,14 @@ contract MyDFSGame {
 	struct Player {
 		address user;
 		address beneficiary;
-		int48[] team;
-		int48 score;
-		uint48 prize;
+		int32[] team;
+		int32 score;
+		uint32 prize;
 	}
 
 	enum State { TeamCreation, InProgress, Finished, Canceled }
+
+	mapping (address => uint8) teamsCount; 
 
 	uint64 gameId;
 	uint32 public gameEntry;
@@ -50,8 +52,8 @@ contract MyDFSGame {
 
 	State public gameState;
 
-	mapping(int48 => int48) public scores;
-	mapping(int48 => mapping (int48 => int48)) public rules;
+	mapping(int32 => int32) public scores;
+	mapping(int32 => mapping (int32 => int32)) public rules;
 
 	function MyDFSGame(
 		uint64 id,
@@ -87,16 +89,17 @@ contract MyDFSGame {
 
 	//call this method before participate
 	//gameToken.approve(<game address>, gameEntry);
-	function participate(int48[] team) public beforeStart {
-		if (gameToken.balanceOf(msg.sender) >= gameEntry){
+	function participate(int32[] team) public beforeStart {
+		if (gameToken.balanceOf(msg.sender) >= gameEntry && teamsCount[msg.sender] <= 4){
 			gameToken.transferFrom(msg.sender, address(this), gameEntry);
 			players.push(Player(msg.sender, address(0x0), team, 0, 0));
+			teamsCount[msg.sender]++;
 		} else {
 			revert();
 		}
 	}
 
-	function participateBeneficiary(int48[] team, address beneficiary) public beforeStart {
+	function participateBeneficiary(int32[] team, address beneficiary) public beforeStart {
 		if (broker.allowance(beneficiary, msg.sender) >= gameEntry){
 			broker.transferFrom(beneficiary, msg.sender, address(this), gameEntry);
 			players.push(Player(msg.sender, beneficiary, team, 0, 0));
@@ -120,7 +123,7 @@ contract MyDFSGame {
 		}
 	}
 
-	function finishGame(int48[] sportsmenFlatData, int48[] rulesFlat) public owned inProgress {
+	function finishGame(int32[] sportsmenFlatData, int32[] rulesFlat) public owned inProgress {
 	    compileRules(rulesFlat);
 		compileGameStats(sportsmenFlatData);
 		calculatePlayersScores();
@@ -130,21 +133,21 @@ contract MyDFSGame {
 		gameState = State.Finished;
 	}
 
-    function compileRules(int48[] rulesFlat) internal {
+    function compileRules(int32[] rulesFlat) internal {
         for (uint32 i = 0; i < rulesFlat.length; i+=3) {
 			rules[rulesFlat[i + 1]][rulesFlat[i]] = rulesFlat[i + 2];
 		}
     }
     
-    function compileGameStats(int48[] sportsmenFlatData) internal {
+    function compileGameStats(int32[] sportsmenFlatData) internal {
         uint32 i = 0;
 		while (i < sportsmenFlatData.length) {
-			int48 sportsmanId = sportsmenFlatData[i];
-			int48 roleId = sportsmenFlatData[i + 1];
+			int32 sportsmanId = sportsmenFlatData[i];
+			int32 roleId = sportsmenFlatData[i + 1];
 			uint32 actionsCount = (uint32)(sportsmenFlatData[i + 2]);
 			for (uint32 j = i + 3; j < i + actionsCount + 3; j += 2){
-				int48 actionId = sportsmenFlatData[j];
-				int48 count = sportsmenFlatData[j + 1];
+				int32 actionId = sportsmenFlatData[j];
+				int32 count = sportsmenFlatData[j + 1];
 				scores[sportsmanId] += rules[roleId][actionId] * count;
 			}
 			i += actionsCount + 2 + 1;
@@ -176,14 +179,14 @@ contract MyDFSGame {
                 tmpArray[tmpArraySize - 1] = counter;
 				counter++;
 			}
-			uint48 placePrizePercent = 0;
+			uint32 placePrizePercent = 0;
 			for (uint32 pIndex = place; pIndex < place + tmpArraySize; pIndex++) {
 				if (pIndex < activeRule.length) {
 					placePrizePercent += activeRule[pIndex];
 				}
 			}
 			for (uint32 wIndex = 0; wIndex < tmpArraySize; wIndex++) {
-				players[tmpArray[wIndex]].prize = (uint48)(prize) * placePrizePercent / (100 * tmpArraySize);
+				players[tmpArray[wIndex]].prize = (uint32)(prize) * placePrizePercent / (100 * tmpArraySize);
 				if (players[tmpArray[wIndex]].beneficiary > 0){
 					uint256 userPrize = broker.getUserFee(players[tmpArray[wIndex]].beneficiary, players[tmpArray[wIndex]].user) * players[tmpArray[wIndex]].prize / 100;
 					uint256 beneficiaryPrize = players[tmpArray[wIndex]].prize - userPrize;
@@ -232,7 +235,7 @@ contract MyDFSGame {
             quickSort(i, right);
     }
 
-	function abs(int48 a) internal constant returns (int48) {
+	function abs(int32 a) internal constant returns (int32) {
 		return (a < 0) ? -a : a;
 	}
 
