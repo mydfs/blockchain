@@ -10,6 +10,12 @@ interface Token {
 interface Stats {
 	function approve(address gameContract) public;
 	function incStat(address user, bool win, uint256 entrySum, uint256 prize) public;
+	function getFeePercent(address user) public constant returns (uint16 fee);
+}
+
+interface Broker {
+	function transferFrom(address beneficiary, address user, address to, uint256 value) public returns (bool success);
+	function allowance(address owner, address spender) public constant returns (uint256 remaining);
 }
 
 contract MyDFSGame {
@@ -28,12 +34,12 @@ contract MyDFSGame {
 	uint48 totalAmount;
 
 	Player[] public players;
-	Player[] tmpPlayerArray;
-	uint32 tmpArraySize;
+	Player tmpPlayer;
 
 	address gameServer;
 	Token gameToken;
 	Stats stats;
+	Broker broker;
 
 	uint8 public serviceFee;
 
@@ -46,12 +52,14 @@ contract MyDFSGame {
 
 	mapping(int48 => int48) public scores;
 	mapping(int48 => mapping (int48 => int48)) public rules;
+	mapping(address => address) public beneficiaries;
 
 	function MyDFSGame(
 		uint64 id,
 		uint32 gameEntryValue,
 		address gameTokenAddress,
 		address statsAddress,
+		address brokerAddress,
 		uint8 serviceFeeValue,
 		uint8[] smallGameWinnersPercents,
 		uint8[] largeGameWinnersPercents) public {
@@ -62,30 +70,42 @@ contract MyDFSGame {
 		// gameToken = Token(gameTokenAddress);
 
 		// stats = Stats(statsAddress);
-		// stats.approve(address(this));
+
+		// broker = Broker(brokerAddress);
 
 		smallGameRules = smallGameWinnersPercents;
 		largeGameRules = largeGameWinnersPercents;
         
 		gameState = State.TeamCreation;
-		
-		tmpArraySize = 0;
-
 	}
+	//call after create
+	//stats.approve(<game address>);
+
 
 	modifier owned() { if (msg.sender == gameServer) _; }
 	modifier beforeStart() { if (gameState == State.TeamCreation) _; }
 	modifier inProgress() { if (gameState == State.InProgress) _; }
 
+	//call this method before participate
+	//gameToken.approve(<game address>, gameEntry);
 	function participate(int48[] team) public beforeStart {
 		// if (gameToken.balanceOf(msg.sender) >= gameEntry){
-			// gameToken.approve(address(this), gameEntry);
 			// gameToken.transferFrom(msg.sender, address(this), gameEntry);
 			totalAmount += gameEntry;
 			players.push(Player(msg.sender, team, 0, 0));
 		// } else {
 			// revert();
 		// }
+	}
+
+	function participateBeneficiary(int48[] team, address beneficiary) public beforeStart {
+		if (broker.allowance(beneficiary, msg.sender) >= gameEntry){
+			broker.transferFrom(beneficiary, msg.sender, address(this), gameEntry);
+			beneficiaries[msg.sender] = beneficiary;
+			players.push(Player(msg.sender, team, 0, 0));
+		} else {
+			revert();
+		}
 	}
 
 	function startGame() public owned {
@@ -104,18 +124,18 @@ contract MyDFSGame {
 	}
 
 	function finishGame(int48[] sportsmenFlatData, int48[] rulesFlat) public owned inProgress {
-		gameState = State.Finished;
 	    compileRules(rulesFlat);
 		compileGameStats(sportsmenFlatData);
 		calculatePlayersScores();
 		sortPlayers();
 		calculateWinners();
 		updateUsersStats();
+		gameState = State.Finished;
 	}
 
-    function compileRules(int48[] rulesFlat) internal{
-        for (uint32 i = 0; i < rulesFlat.length; i++) {
-			rules[abs(rulesFlat[i] % 100000000 / 10000)][abs(rulesFlat[i] / 100000000)] = rulesFlat[i] % 10000;
+    function compileRules(int48[] rulesFlat) internal {
+        for (uint32 i = 0; i < rulesFlat.length; i+=3) {
+			rules[rulesFlat[i + 1]][rulesFlat[i]] = rulesFlat[i + 2];
 		}
     }
     
@@ -125,9 +145,9 @@ contract MyDFSGame {
 			int48 sportsmanId = sportsmenFlatData[i];
 			int48 roleId = sportsmenFlatData[i + 1];
 			uint32 actionsCount = (uint32)(sportsmenFlatData[i + 2]);
-			for (uint32 j = i + 3; j < i + actionsCount + 3; j++){
-				int48 actionId = sportsmenFlatData[j] / 100000;
-				int48 count = sportsmenFlatData[j] % 100000;
+			for (uint32 j = i + 3; j < i + actionsCount + 3; j += 2){
+				int48 actionId = sportsmenFlatData[j];
+				int48 count = sportsmenFlatData[j + 1];
 				scores[sportsmanId] += rules[roleId][actionId] * count;
 			}
 			i += actionsCount + 2 + 1;
@@ -143,42 +163,58 @@ contract MyDFSGame {
     }
     
     function calculateWinners() internal {
+        uint256 prize = totalPrize();
         uint32 place = 0;
 		uint32 counter = 0;
+		uint32[] memory tmpArray = new uint32[](players.length);
+        uint32 tmpArraySize;
 	    activeRule = players.length > 100 ? largeGameRules : smallGameRules;
-		while (place < activeRule.length) {
+		while (place < activeRule.length && counter < players.length) {
 			uint32 current = counter;
 			counter++;
-			tmpArraySize = 0;
-			tmpPlayerArray.push(players[current]);
+			tmpArraySize = 1;
+			tmpArray[tmpArraySize - 1] = current;
 			while (counter < players.length && players[current].score == players[counter].score){
-				tmpPlayerArray.push(players[counter]);
+				tmpArraySize++;
+                tmpArray[tmpArraySize - 1] = counter;
 				counter++;
 			}
-			uint48 placePrizePercent;
+			uint48 placePrizePercent = 0;
 			for (uint32 pIndex = place; pIndex < place + tmpArraySize; pIndex++) {
 				if (pIndex < activeRule.length) {
 					placePrizePercent += activeRule[pIndex];
 				}
 			}
 			for (uint32 wIndex = 0; wIndex < tmpArraySize; wIndex++) {
-				tmpPlayerArray[wIndex].prize = (uint48)(totalPrize()) * placePrizePercent / (100 * tmpArraySize);
-				// gameToken.transfer(tmpPlayerArray[wIndex].user, tmpPlayerArray[wIndex].prize);
+				players[tmpArray[wIndex]].prize = (uint48)(prize) * placePrizePercent / (100 * tmpArraySize);
+				if (hasBeneficiary(players[tmpArray[wIndex]].user)){
+					uint256 userPrize = stats.getFeePercent(players[tmpArray[wIndex]].user) * players[tmpArray[wIndex]].prize / 100;
+					uint256 beneficiaryPrize = players[tmpArray[wIndex]].prize - userPrize;
+					// gameToken.transfer(players[tmpArray[wIndex]].user, userPrize);
+					// gameToken.transfer(beneficiaries[players[tmpArray[wIndex]].user], beneficiaryPrize);
+				} else {
+					// gameToken.transfer(players[tmpArray[wIndex]].user, players[tmpArray[wIndex]].prize);
+				}
 			}
 			place += tmpArraySize;
 		}
+		// gameToken.transfer(gameServer, gameToken.balanceOf(address(this)));
+    }
+
+    function hasBeneficiary(address user) public constant returns (bool has){
+    	return beneficiaries[user] > 0x0;
     }
     
     function updateUsersStats() internal {
         for (uint32 i = 0; i < players.length; i++){
-            // stats.incStat(players[i].user, players[i].prize > 0, gameEntry, players[i].prize);
+            stats.incStat(players[i].user, players[i].prize > 0, gameEntry, players[i].prize);
         }
     }
 
 	function sortPlayers() internal {
         if (players.length == 0)
             return;
-        quickSort(players, 0, (uint32)(players.length));
+        quickSort(0, players.length - 1);
     }
     
     function quickSort(uint256 left, uint256 right) internal {
@@ -212,7 +248,7 @@ contract MyDFSGame {
 	}
 
 	function totalPrize() public constant returns (uint256 prize){
-		return totalAmount * (100 - serviceFee) / 100;
+		return totalAmount;
 		// return gameToken.balanceOf(address(this)) * (100 - serviceFee) / 100;
 	} 
 }

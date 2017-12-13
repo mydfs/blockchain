@@ -27,7 +27,7 @@ contract Stats {
 		gameAddresses[gameContract] = true;
 	}
 
-	function incStat(address user, bool win, uint256 entrySum, uint256 prize) public allowed{
+	function incStat(address user, bool win, uint256 entrySum, uint256 prize) public allowed {
 		users[user].gamesCount++;
 		if (win){
 			users[user].wins++;
@@ -37,26 +37,27 @@ contract Stats {
 	}
 
 	function changeFeePercent(uint16 amount) public {
+		require(amount >= 0 && amount <= 100);
 		users[msg.sender].feePercent = amount;
 	}
 
-	function getFeePercent(address user) public constant returns (uint16 fee){
+	function getFeePercent(address user) public constant returns (uint16 fee) {
 		return users[user].feePercent;
 	}
 
-	function getUserGamesCount(address user) public constant returns (uint256 gamesCount){
+	function getUserGamesCount(address user) public constant returns (uint256 gamesCount) {
 		return users[user].gamesCount;
 	}
 
-	function getUserWins(address user) public constant returns (uint256 wins){
+	function getUserWins(address user) public constant returns (uint256 wins) {
 		return users[user].wins;
 	}
 
-	function getUserPrizeSum(address user) public constant returns (uint256 totalPrizeSum){
+	function getUserPrizeSum(address user) public constant returns (uint256 totalPrizeSum) {
 		return users[user].totalPrizeSum;
 	}
 
-	function getUserLoseSum(address user) public constant returns (uint256 totalLoseSum){
+	function getUserLoseSum(address user) public constant returns (uint256 totalLoseSum) {
 		return users[user].totalLoseSum;
 	}
 

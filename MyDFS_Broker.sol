@@ -17,7 +17,7 @@ contract Broker {
 		token = Token(tokenAddress);
 	}
 
-	//call this method before participate
+	//call this method before hire
 	//gameToken.approve(<broker address>, amount to invest);
 	function hire(address user, uint256 tokensAmount) public{
 		allowed[msg.sender][user] = tokensAmount;
@@ -31,6 +31,8 @@ contract Broker {
 		if (allowed[beneficiary][user] >= value){
 			allowed[beneficiary][user] -= value;
 			return token.transferFrom(beneficiary, to, value);
+		} else {
+			revert();
 		}
 	}
 
