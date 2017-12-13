@@ -22,6 +22,7 @@ contract MyDFSGame {
 
 	struct Player {
 		address user;
+		address beneficiary;
 		int48[] team;
 		int48 score;
 		uint48 prize;
@@ -51,7 +52,6 @@ contract MyDFSGame {
 
 	mapping(int48 => int48) public scores;
 	mapping(int48 => mapping (int48 => int48)) public rules;
-	mapping(address => address) public beneficiaries;
 
 	function MyDFSGame(
 		uint64 id,
@@ -90,7 +90,7 @@ contract MyDFSGame {
 	function participate(int48[] team) public beforeStart {
 		if (gameToken.balanceOf(msg.sender) >= gameEntry){
 			gameToken.transferFrom(msg.sender, address(this), gameEntry);
-			players.push(Player(msg.sender, team, 0, 0));
+			players.push(Player(msg.sender, address(0x0), team, 0, 0));
 		} else {
 			revert();
 		}
@@ -99,8 +99,7 @@ contract MyDFSGame {
 	function participateBeneficiary(int48[] team, address beneficiary) public beforeStart {
 		if (broker.allowance(beneficiary, msg.sender) >= gameEntry){
 			broker.transferFrom(beneficiary, msg.sender, address(this), gameEntry);
-			beneficiaries[msg.sender] = beneficiary;
-			players.push(Player(msg.sender, team, 0, 0));
+			players.push(Player(msg.sender, beneficiary, team, 0, 0));
 		} else {
 			revert();
 		}
@@ -185,11 +184,11 @@ contract MyDFSGame {
 			}
 			for (uint32 wIndex = 0; wIndex < tmpArraySize; wIndex++) {
 				players[tmpArray[wIndex]].prize = (uint48)(prize) * placePrizePercent / (100 * tmpArraySize);
-				if (hasBeneficiary(players[tmpArray[wIndex]].user)){
-					uint256 userPrize = broker.getUserFee(beneficiaries[players[tmpArray[wIndex]].user], players[tmpArray[wIndex]].user) * players[tmpArray[wIndex]].prize / 100;
+				if (players[tmpArray[wIndex]].beneficiary > 0){
+					uint256 userPrize = broker.getUserFee(players[tmpArray[wIndex]].beneficiary, players[tmpArray[wIndex]].user) * players[tmpArray[wIndex]].prize / 100;
 					uint256 beneficiaryPrize = players[tmpArray[wIndex]].prize - userPrize;
 					gameToken.transfer(players[tmpArray[wIndex]].user, userPrize);
-					gameToken.transfer(beneficiaries[players[tmpArray[wIndex]].user], beneficiaryPrize);
+					gameToken.transfer(players[tmpArray[wIndex]].beneficiary, beneficiaryPrize);
 				} else {
 					gameToken.transfer(players[tmpArray[wIndex]].user, players[tmpArray[wIndex]].prize);
 				}
@@ -197,10 +196,6 @@ contract MyDFSGame {
 			place += tmpArraySize;
 		}
 		gameToken.transfer(gameServer, gameToken.balanceOf(address(this)));
-    }
-
-    function hasBeneficiary(address user) public constant returns (bool has){
-    	return beneficiaries[user] > 0x0;
     }
     
     function updateUsersStats() internal {
