@@ -39,7 +39,7 @@ contract MyDFSCrowdsale {
         uint softFundingGoalInEthers,
         uint hardFundingGoalInEthers,
         uint durationInMinutes,
-        uint finneyCostOfEachToken,
+        uint szaboCostOfEachToken,
         address addressOfTokenUsedAsReward,
         uint32[] bonusesCounts,
         uint16[] bonusesValues
@@ -49,7 +49,7 @@ contract MyDFSCrowdsale {
         softFundingGoal = softFundingGoalInEthers * 1 ether;
         hardFundingGoal = hardFundingGoalInEthers * 1 ether;
         deadline = now + durationInMinutes * 1 minutes;
-        price = finneyCostOfEachToken * 1 finney;
+        price = szaboCostOfEachToken * 1 szabo;
         tokenReward = Token(addressOfTokenUsedAsReward);
         bonusesCount = bonusesCounts.length;
         for (uint256 i = 0; i < bonusesCount; i++){
@@ -61,7 +61,8 @@ contract MyDFSCrowdsale {
         require(!crowdsaleClosed);
         uint amount = msg.value;
         uint count = amount / price + (amount % price > 0 ? 1 : 0);
-        count += getBonusOf(amount) * count / 100;
+        uint16 bonus = getBonusOf(amount);
+        count += bonus * count / 100 + ((bonus * count) % 100 > 0 ? 1 : 0) ;
         if (tokenReward.balanceOf(address(this)) >= count){
             balanceOf[msg.sender] += amount;
             amountRaised += amount;
@@ -74,7 +75,7 @@ contract MyDFSCrowdsale {
 
     function getBonusOf(uint amount) public constant returns (uint16 value){
         for (uint256 i = bonusesCount - 1; i >= 0; i--){
-            if (amount >= bonuses[i].amount){
+            if (amount >= bonuses[i].amount * 1 ether){
                 return bonuses[i].value;
             }
         }
