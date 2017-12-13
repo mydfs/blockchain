@@ -10,12 +10,12 @@ interface Token {
 interface Stats {
 	function approve(address gameContract) public;
 	function incStat(address user, bool win, uint256 entrySum, uint256 prize) public;
-	function getFeePercent(address user) public constant returns (uint16 fee);
 }
 
 interface Broker {
 	function transferFrom(address beneficiary, address user, address to, uint256 value) public returns (bool success);
 	function allowance(address owner, address spender) public constant returns (uint256 remaining);
+	function getUserFee(address beneficiary, address user) public constant returns (uint16 fee);
 }
 
 contract MyDFSGame {
@@ -186,7 +186,7 @@ contract MyDFSGame {
 			for (uint32 wIndex = 0; wIndex < tmpArraySize; wIndex++) {
 				players[tmpArray[wIndex]].prize = (uint48)(prize) * placePrizePercent / (100 * tmpArraySize);
 				if (hasBeneficiary(players[tmpArray[wIndex]].user)){
-					uint256 userPrize = stats.getFeePercent(players[tmpArray[wIndex]].user) * players[tmpArray[wIndex]].prize / 100;
+					uint256 userPrize = broker.getUserFee(beneficiaries[players[tmpArray[wIndex]].user], players[tmpArray[wIndex]].user) * players[tmpArray[wIndex]].prize / 100;
 					uint256 beneficiaryPrize = players[tmpArray[wIndex]].prize - userPrize;
 					gameToken.transfer(players[tmpArray[wIndex]].user, userPrize);
 					gameToken.transfer(beneficiaries[players[tmpArray[wIndex]].user], beneficiaryPrize);
