@@ -60,7 +60,7 @@ contract MyDFSCrowdsale {
     function () public payable {
         require(!crowdsaleClosed);
         uint amount = msg.value;
-        uint count = amount / price + amount % price > 0 ? 1 : 0;
+        uint count = amount / price + (amount % price > 0 ? 1 : 0);
         count += getBonusOf(amount) * count / 100;
         if (tokenReward.balanceOf(address(this)) >= count){
             balanceOf[msg.sender] += amount;
