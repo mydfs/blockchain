@@ -91,9 +91,12 @@ contract MyDFSGame {
 	//gameToken.approve(<game address>, gameEntry);
 	function participate(int32[] team) public beforeStart {
 		if (gameToken.balanceOf(msg.sender) >= gameEntry && teamsCount[msg.sender] <= 4){
-			gameToken.transferFrom(msg.sender, address(this), gameEntry);
-			players.push(Player(msg.sender, address(0x0), team, 0, 0));
-			teamsCount[msg.sender]++;
+			if (gameToken.transferFrom(msg.sender, address(this), gameEntry)){
+				players.push(Player(msg.sender, address(0x0), team, 0, 0));
+				teamsCount[msg.sender]++;
+			} else {
+				revert();
+			}
 		} else {
 			revert();
 		}
@@ -101,8 +104,12 @@ contract MyDFSGame {
 
 	function participateBeneficiary(int32[] team, address beneficiary) public beforeStart {
 		if (broker.allowance(beneficiary, msg.sender) >= gameEntry){
-			broker.transferFrom(beneficiary, msg.sender, address(this), gameEntry);
-			players.push(Player(msg.sender, beneficiary, team, 0, 0));
+			if (broker.transferFrom(beneficiary, msg.sender, address(this), gameEntry)){
+				players.push(Player(msg.sender, beneficiary, team, 0, 0));
+				teamsCount[msg.sender]++;
+			} else {
+				revert();
+			}
 		} else {
 			revert();
 		}
@@ -235,7 +242,7 @@ contract MyDFSGame {
             quickSort(i, right);
     }
 
-	function abs(int32 a) internal constant returns (int32) {
+	function abs(int32 a) internal pure returns (int32) {
 		return (a < 0) ? -a : a;
 	}
 

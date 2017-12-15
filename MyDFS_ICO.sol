@@ -3,6 +3,7 @@ pragma solidity ^0.4.16;
 interface Token {
     function transfer(address to, uint256 value) public returns (bool success);
     function balanceOf(address owner) public constant returns (uint256 balance);
+    function allowance(address owner, address spender) public constant returns (uint256 remaining);
 } 
 
 contract MyDFSCrowdsale {
@@ -19,7 +20,8 @@ contract MyDFSCrowdsale {
     uint public deadline;
     uint public price;
     Token public tokenReward;
-    mapping(address => uint256) public balanceOf;
+    address tokenHandlerAddress;
+    mapping(address => uint256) public balance;
     bool fundingGoalReached = false;
     bool crowdsaleClosed = false;
     mapping(uint256 => Bonus) public bonuses;
@@ -41,10 +43,12 @@ contract MyDFSCrowdsale {
         uint durationInMinutes,
         uint szaboCostOfEachToken,
         address addressOfTokenUsedAsReward,
+        address tokenHandler,
         uint32[] bonusesCounts,
         uint16[] bonusesValues
     ) public {
         require(bonusesCounts.length == bonusesValues.length);
+        tokenHandlerAddress = tokenHandler;
         beneficiary = ifSuccessfulSendTo;
         softFundingGoal = softFundingGoalInEthers * 1 ether;
         hardFundingGoal = hardFundingGoalInEthers * 1 ether;
@@ -63,8 +67,8 @@ contract MyDFSCrowdsale {
         uint count = amount / price + (amount % price > 0 ? 1 : 0);
         uint16 bonus = getBonusOf(amount);
         count += bonus * count / 100 + ((bonus * count) % 100 > 0 ? 1 : 0) ;
-        if (tokenReward.balanceOf(address(this)) >= count){
-            balanceOf[msg.sender] += amount;
+        if (tokenReward.allowance(tokenHandlerAddress, address(this)) >= count){
+            balance[msg.sender] += amount;
             amountRaised += amount;
             tokenReward.transfer(msg.sender, count);
             FundTransfer(msg.sender, amount, true);
@@ -112,13 +116,13 @@ contract MyDFSCrowdsale {
 
     function safeWithdrawal() public afterDeadline {
         if (!fundingGoalReached) {
-            uint amount = balanceOf[msg.sender];
-            balanceOf[msg.sender] = 0;
+            uint amount = balance[msg.sender];
+            balance[msg.sender] = 0;
             if (amount > 0) {
                 if (msg.sender.send(amount)) {
                     FundTransfer(msg.sender, amount, false);
                 } else {
-                    balanceOf[msg.sender] = amount;
+                    balance[msg.sender] = amount;
                 }
             }
         }
