@@ -20,7 +20,6 @@ contract MyDFSCrowdsale {
     uint public deadline;
     uint public price;
     Token public tokenReward;
-    address tokenHandlerAddress;
     mapping(address => uint256) public balance;
     bool fundingGoalReached = false;
     bool crowdsaleClosed = false;
@@ -43,12 +42,10 @@ contract MyDFSCrowdsale {
         uint durationInMinutes,
         uint szaboCostOfEachToken,
         address addressOfTokenUsedAsReward,
-        address tokenHandler,
         uint32[] bonusesCounts,
         uint16[] bonusesValues
     ) public {
         require(bonusesCounts.length == bonusesValues.length);
-        tokenHandlerAddress = tokenHandler;
         beneficiary = ifSuccessfulSendTo;
         softFundingGoal = softFundingGoalInEthers * 1 ether;
         hardFundingGoal = hardFundingGoalInEthers * 1 ether;
@@ -67,7 +64,7 @@ contract MyDFSCrowdsale {
         uint count = amount / price + (amount % price > 0 ? 1 : 0);
         uint16 bonus = getBonusOf(amount);
         count += bonus * count / 100 + ((bonus * count) % 100 > 0 ? 1 : 0) ;
-        if (tokenReward.allowance(tokenHandlerAddress, address(this)) >= count){
+        if (tokenReward.balanceOf(address(this)) >= count){
             balance[msg.sender] += amount;
             amountRaised += amount;
             tokenReward.transfer(msg.sender, count);
