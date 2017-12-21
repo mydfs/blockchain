@@ -1,22 +1,8 @@
 pragma solidity ^0.4.16;
 
-interface Token {
-    function transfer(address to, uint256 value) public returns (bool success);
-    function transferFrom(address from, address to, uint256 value) public returns (bool success);
-    function balanceOf(address owner) public constant returns (uint256 balance);
-    function approve(address spender, uint256 value) public returns (bool success);
-} 
-
-interface Stats {
-	function approve(address gameContract) public;
-	function incStat(address user, bool win, uint256 entrySum, uint256 prize) public;
-}
-
-interface Broker {
-	function transferFrom(address beneficiary, address user, address to, uint256 value) public returns (bool success);
-	function allowance(address owner, address spender) public constant returns (uint256 remaining);
-	function getUserFee(address beneficiary, address user) public constant returns (uint16 fee);
-}
+import './interface/Token.sol';
+import './interface/Stats.sol';
+import './interface/Broker.sol';
 
 contract MyDFSGame {
 
@@ -55,6 +41,12 @@ contract MyDFSGame {
 	mapping(int32 => int32) public scores;
 	mapping(int32 => mapping (int32 => int32)) public rules;
 
+	modifier owned() { if (msg.sender == gameServer) _; }
+	modifier beforeStart() { if (gameState == State.TeamCreation) _; }
+	modifier inProgress() { if (gameState == State.InProgress) _; }
+
+	//externals
+
 	function MyDFSGame(
 		uint64 id,
 		uint32 gameEntryValue,
@@ -63,7 +55,10 @@ contract MyDFSGame {
 		address brokerAddress,
 		uint8 serviceFeeValue,
 		uint8[] smallGameWinnersPercents,
-		uint8[] largeGameWinnersPercents) public {
+		uint8[] largeGameWinnersPercents
+	) 
+		public 
+	{
 		gameId = id;
 		gameEntry = gameEntryValue;
 		serviceFee = serviceFeeValue;
@@ -83,13 +78,14 @@ contract MyDFSGame {
 	//stats.approve(<game address>);
 
 
-	modifier owned() { if (msg.sender == gameServer) _; }
-	modifier beforeStart() { if (gameState == State.TeamCreation) _; }
-	modifier inProgress() { if (gameState == State.InProgress) _; }
-
 	//call this method before participate
 	//gameToken.approve(<game address>, gameEntry);
-	function participate(int32[] team) public beforeStart {
+	function participate(
+		int32[] team
+	)
+		external
+		beforeStart
+	{
 		if (gameToken.balanceOf(msg.sender) >= gameEntry && teamsCount[msg.sender] <= 4){
 			if (gameToken.transferFrom(msg.sender, address(this), gameEntry)){
 				players.push(Player(msg.sender, address(0x0), team, 0, 0));
@@ -102,7 +98,13 @@ contract MyDFSGame {
 		}
 	}
 
-	function participateBeneficiary(int32[] team, address beneficiary) public beforeStart {
+	function participateBeneficiary(
+		int32[] team,
+		address beneficiary
+	)
+		external
+		beforeStart
+	{
 		if (broker.allowance(beneficiary, msg.sender) >= gameEntry){
 			if (broker.transferFrom(beneficiary, msg.sender, address(this), gameEntry)){
 				players.push(Player(msg.sender, beneficiary, team, 0, 0));
@@ -115,7 +117,7 @@ contract MyDFSGame {
 		}
 	}
 
-	function startGame() public owned {
+	function startGame() external owned {
 		if (players.length > 0){
 			gameState = State.InProgress;
 		} else {
@@ -123,14 +125,21 @@ contract MyDFSGame {
 		}
 	}
 
-	function cancelGame() public owned {
+	function cancelGame() external owned {
 		gameState = State.Canceled;
 		for (uint32 i = 0; i < players.length; i++){
 			gameToken.transfer(players[i].user, gameEntry);
 		}
 	}
 
-	function finishGame(int32[] sportsmenFlatData, int32[] rulesFlat) public owned inProgress {
+	function finishGame(
+		int32[] sportsmenFlatData, 
+		int32[] rulesFlat
+	)
+		external
+		owned
+		inProgress
+	{
 	    compileRules(rulesFlat);
 		compileGameStats(sportsmenFlatData);
 		calculatePlayersScores();
@@ -140,12 +149,25 @@ contract MyDFSGame {
 		gameState = State.Finished;
 	}
 
+	//public
+
+	function totalPrize(
+	) 
+		public
+		constant
+		returns (uint256 prize)
+	{
+		return gameToken.balanceOf(address(this)) * (100 - serviceFee) / 100;
+	} 
+
+	//internal
+
     function compileRules(int32[] rulesFlat) internal {
         for (uint32 i = 0; i < rulesFlat.length; i+=3) {
 			rules[rulesFlat[i + 1]][rulesFlat[i]] = rulesFlat[i + 2];
 		}
     }
-    
+
     function compileGameStats(int32[] sportsmenFlatData) internal {
         uint32 i = 0;
 		while (i < sportsmenFlatData.length) {
@@ -220,7 +242,12 @@ contract MyDFSGame {
         quickSort(0, players.length - 1);
     }
     
-    function quickSort(uint256 left, uint256 right) internal {
+    function quickSort(
+    	uint256 left, 
+    	uint256 right
+    ) 
+    	internal 
+    {
         uint256 i = left;
         uint256 j = right;
         while (i <= j) {
@@ -246,12 +273,5 @@ contract MyDFSGame {
 		return (a < 0) ? -a : a;
 	}
 
-	function gameState() public constant returns (State) {
-		return gameState;
-	}
-
-	function totalPrize() public constant returns (uint256 prize){
-		return gameToken.balanceOf(address(this)) * (100 - serviceFee) / 100;
-	} 
 }
 

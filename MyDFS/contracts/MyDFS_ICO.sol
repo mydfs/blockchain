@@ -1,10 +1,6 @@
 pragma solidity ^0.4.16;
 
-interface Token {
-    function transfer(address to, uint256 value) public returns (bool success);
-    function balanceOf(address owner) public constant returns (uint256 balance);
-    function allowance(address owner, address spender) public constant returns (uint256 remaining);
-} 
+import './interface/Token.sol';
 
 contract MyDFSCrowdsale {
     
@@ -29,6 +25,10 @@ contract MyDFSCrowdsale {
     event SoftGoalReached(address recipient, uint totalAmountRaised);
     event HardGoalReached(address recipient, uint totalAmountRaised);
     event FundTransfer(address backer, uint amount, bool isContribution);
+
+    modifier afterDeadline() { if (now >= deadline) _; }
+
+    //external
 
     /**
      * Constrctor function
@@ -58,7 +58,7 @@ contract MyDFSCrowdsale {
         }
     }
 
-    function () public payable {
+    function () external payable {
         require(!crowdsaleClosed);
         uint amount = msg.value;
         uint count = amount / price + (amount % price > 0 ? 1 : 0);
@@ -74,44 +74,21 @@ contract MyDFSCrowdsale {
         }
     }
 
-    function getBonusOf(uint amount) public constant returns (uint16 value){
-        for (uint256 i = bonusesCount - 1; i >= 0; i--){
-            if (amount >= bonuses[i].amount * 1 ether){
-                return bonuses[i].value;
-            }
-        }
-        return 0;
-    }
-
-    function getBonusesCount() public constant returns (uint256 count){
-        return bonusesCount;
-    }
-
-    function getBonusAmountByIndex(uint256 index) public constant returns (uint32 value){
-        return bonuses[index].amount;
-    }
-
-    function getBonusValueByIndex(uint256 index) public constant returns (uint16 value){
-        return bonuses[index].value;
-    }
-
-    modifier afterDeadline() { if (now >= deadline) _; }
-
-    function checkSoftGoalReached() public afterDeadline {
+    function checkSoftGoalReached() external afterDeadline {
         if (amountRaised >= softFundingGoal){
             fundingGoalReached = true;
             SoftGoalReached(beneficiary, amountRaised);
         }
     }
 
-    function checkHardGoalReached() public afterDeadline {
+    function checkHardGoalReached() external afterDeadline {
         if (amountRaised >= hardFundingGoal){
             HardGoalReached(beneficiary, amountRaised);
         }
         crowdsaleClosed = true;
     }
 
-    function safeWithdrawal() public afterDeadline {
+    function safeWithdrawal() external afterDeadline {
         if (!fundingGoalReached) {
             uint amount = balance[msg.sender];
             balance[msg.sender] = 0;
@@ -131,5 +108,20 @@ contract MyDFSCrowdsale {
                 fundingGoalReached = false;
             }
         }
+    }
+
+    function getBonusOf(
+        uint amount
+    ) 
+        public
+        constant
+        returns (uint16 value)
+    {
+        for (uint256 i = bonusesCount - 1; i >= 0; i--){
+            if (amount >= bonuses[i].amount * 1 ether){
+                return bonuses[i].value;
+            }
+        }
+        return 0;
     }
 }
