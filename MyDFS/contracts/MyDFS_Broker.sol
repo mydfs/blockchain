@@ -6,15 +6,19 @@ import './interface/Broker.sol';
 
 contract BrokerManager is Broker {
 
+	//cтруктура соглашения количество токенов + процент юзера
 	struct Term{
 		uint256 amount;
 		uint16 userFee;
 	}
 
+	//набор соглашений между брокерами и юзерами 
 	mapping (address => mapping (address => Term)) allowed;
 
 	Token token;
 	Stats stats;
+
+	//сделать map => user -> broker
 
 	function BrokerManager (
 		address tokenAddress,
