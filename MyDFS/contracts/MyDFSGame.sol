@@ -38,6 +38,12 @@ contract MyDFSGame {
 	modifier beforeStart() { if (gameState == State.TeamCreation) _; }
 	modifier inProgress() { if (gameState == State.InProgress) _; }
 
+	event Participate(address user);
+	event Winner(address user, uint256 prize);
+	//event participate
+	//event winner 
+	//
+
 	//externals
 
 	function MyDFSGame(
@@ -88,6 +94,7 @@ contract MyDFSGame {
 		if (gameToken.balanceOf(msg.sender) >= gameEntry && teamsCount[msg.sender] <= 4){
 			if (gameToken.transferFrom(msg.sender, address(this), gameEntry)){
 				players.push(Player(msg.sender, address(0x0), team, 0, 0));
+				Participate(msg.sender);
 				teamsCount[msg.sender]++;
 			} else {
 				revert();
@@ -107,6 +114,7 @@ contract MyDFSGame {
 		if (broker.allowance(beneficiary, msg.sender) >= gameEntry){
 			if (broker.transferFrom(beneficiary, msg.sender, address(this), gameEntry)){
 				players.push(Player(msg.sender, beneficiary, team, 0, 0));
+				Participate(msg.sender);
 				teamsCount[msg.sender]++;
 			} else {
 				revert();
@@ -219,9 +227,12 @@ contract MyDFSGame {
 					uint256 userPrize = broker.getUserFee(players[tmpArray[wIndex]].beneficiary, players[tmpArray[wIndex]].user) * players[tmpArray[wIndex]].prize / 100;
 					uint256 beneficiaryPrize = players[tmpArray[wIndex]].prize - userPrize;
 					gameToken.transfer(players[tmpArray[wIndex]].user, userPrize);
+					Winner(players[tmpArray[wIndex]].user, userPrize);
 					gameToken.transfer(players[tmpArray[wIndex]].beneficiary, beneficiaryPrize);
+					Winner(players[tmpArray[wIndex]].beneficiary, beneficiaryPrize);
 				} else {
 					gameToken.transfer(players[tmpArray[wIndex]].user, players[tmpArray[wIndex]].prize);
+					Winner(players[tmpArray[wIndex]].user, players[tmpArray[wIndex]].prize);
 				}
 			}
 			place += tmpArraySize;

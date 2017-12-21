@@ -15,6 +15,8 @@ contract BrokerManager is Broker {
 	//набор соглашений между брокерами и юзерами 
 	mapping (address => mapping (address => Term)) allowed;
 
+	mapping (address => mapping (address => Term)) userBrokers;
+
 	Token token;
 	Stats stats;
 
@@ -40,11 +42,17 @@ contract BrokerManager is Broker {
 	)
 		external
 	{
-		allowed[msg.sender][user] = Term(tokensAmount, stats.getFeePercent(user));
+		if (allowed[msg.sender][user].amount == 0){
+			allowed[msg.sender][user] = Term(tokensAmount, stats.getFeePercent(user));
+			userBrokers[user][msg.sender] = Term(tokensAmount, stats.getFeePercent(user));
+		} else {
+			revert();
+		}
 	}
 
 	function fire(address user) external {
 		allowed[msg.sender][user].amount = 0;
+		allowed[user][msg.sender].amount = 0;
 	}
 
 	function transferFrom(
