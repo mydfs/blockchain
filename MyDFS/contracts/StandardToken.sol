@@ -15,6 +15,7 @@ contract StandardToken is Token {
         external
         returns (bool success) 
     {
+        require(to != address(0));
         if (balances[msg.sender] >= value && value > 0) {
             balances[msg.sender] -= value;
             balances[to] += value;
@@ -31,6 +32,7 @@ contract StandardToken is Token {
         external 
         returns (bool success)
     {
+        require(from != address(0) && to != address(0));
         if (balances[from] >= value && allowed[from][msg.sender] >= value && value > 0) {
             balances[to] += value;
             balances[from] -= value;
@@ -59,6 +61,7 @@ contract StandardToken is Token {
         external
         returns (bool success) 
     {
+        require(spender != address(0));
         allowed[msg.sender][spender] -= value;
         Approval(msg.sender, spender, allowed[msg.sender][spender]);
         return true;

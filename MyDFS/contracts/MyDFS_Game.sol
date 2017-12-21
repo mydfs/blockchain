@@ -16,30 +16,23 @@ contract MyDFSGame {
 
 	enum State { TeamCreation, InProgress, Finished, Canceled }
 
-	mapping (address => uint8) teamsCount; 
-
-	uint64 gameId;
 	uint32 public gameEntry;
-
 	Player[] public players;
-	Player tmpPlayer;
+	uint8 public serviceFee;
+	uint8[] public activeRule;
+	State public gameState;
+	mapping(int32 => int32) public scores;
+	mapping(int32 => mapping (int32 => int32)) public rules;
 
+	mapping (address => uint8) teamsCount; 
+	uint64 gameId;
+	Player tmpPlayer;
 	address gameServer;
 	Token gameToken;
 	Stats stats;
 	Broker broker;
-
-	uint8 public serviceFee;
-
 	uint8[] smallGameRules;
 	uint8[] largeGameRules;
-	
-	uint8[] public activeRule;
-
-	State public gameState;
-
-	mapping(int32 => int32) public scores;
-	mapping(int32 => mapping (int32 => int32)) public rules;
 
 	modifier owned() { if (msg.sender == gameServer) _; }
 	modifier beforeStart() { if (gameState == State.TeamCreation) _; }
@@ -59,6 +52,12 @@ contract MyDFSGame {
 	) 
 		public 
 	{
+		require(gameEntryValue > 0
+			&& gameTokenAddress != address(0)
+			&& statsAddress != address(0)
+			&& brokerAddress != address(0)
+			&& smallGameWinnersPercents.length > 0
+			&& largeGameWinnersPercents.length > 0);
 		gameId = id;
 		gameEntry = gameEntryValue;
 		serviceFee = serviceFeeValue;

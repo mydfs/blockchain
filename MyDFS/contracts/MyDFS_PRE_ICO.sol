@@ -10,7 +10,6 @@ contract MyDFSCrowdsale {
     }
 
     address public beneficiary;
-    uint public softFundingGoal;
     uint public hardFundingGoal;
     uint public amountRaised;
     uint public deadline;
@@ -29,8 +28,7 @@ contract MyDFSCrowdsale {
     event Refund(address investor, uint sum);
 
     modifier active() { if (now < deadline && !emergencyPaused && amountRaised < hardFundingGoal) _; }
-    modifier goalNotReached() { if (now >= deadline && amountRaised < softFundingGoal) _; }
-    modifier finished() { if ((now >= deadline && amountRaised >= softFundingGoal) || amountRaised >= hardFundingGoal) _; }
+    modifier finished() { if (now >= deadline) _; }
     modifier verified() { if (msg.sender == admin) _; }
 
     //external
@@ -42,7 +40,6 @@ contract MyDFSCrowdsale {
      */
     function MyDFSCrowdsale(
         address ifSuccessfulSendTo,
-        uint softFundingGoalInEthers,
         uint hardFundingGoalInEthers,
         uint durationInMinutes,
         uint szaboCostOfEachToken,
@@ -51,16 +48,13 @@ contract MyDFSCrowdsale {
         uint16[] bonusesValues
     ) public {
         require(ifSuccessfulSendTo != address(0)
-            && softFundingGoalInEthers > 0
             && hardFundingGoalInEthers > 0
-            && hardFundingGoalInEthers > softFundingGoalInEthers
             && durationInMinutes > 0
             && szaboCostOfEachToken > 0
             && addressOfTokenUsedAsReward != address(0)
             && bonusesEthAmount.length == bonusesValues.length);
         admin = msg.sender;
         beneficiary = ifSuccessfulSendTo;
-        softFundingGoal = softFundingGoalInEthers * 1 ether;
         hardFundingGoal = hardFundingGoalInEthers * 1 ether;
         deadline = now + durationInMinutes * 1 minutes;
         price = szaboCostOfEachToken * 1 szabo;
@@ -101,18 +95,6 @@ contract MyDFSCrowdsale {
 
     function emergencyUnpause() external verified {
         emergencyPaused = false;
-    }
-
-    function claimRefund() external goalNotReached {
-        uint amount = balances[msg.sender];
-        balances[msg.sender] = 0;
-        if (amount > 0){
-            if (msg.sender.send(amount)) {
-                Refund(msg.sender, amount);
-            } else {
-                balances[msg.sender] = amount;
-            }
-        }
     }
 
     function withdrawFunding() external finished {

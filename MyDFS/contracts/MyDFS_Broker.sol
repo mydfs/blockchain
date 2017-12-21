@@ -22,6 +22,8 @@ contract BrokerManager is Broker {
 	) 
 		public
 	{
+		require(tokenAddress != address(0)
+			&& statsAddress != address(0));
 		token = Token(tokenAddress);
 		stats = Stats(statsAddress);
 	}
@@ -50,6 +52,9 @@ contract BrokerManager is Broker {
 		external
 		returns (bool success)
 	{
+		require(beneficiary != address(0)
+			&& user != address(0)
+			&& to != address(0));
 		if (allowance(beneficiary, user) >= value){
 			allowed[beneficiary][user].amount -= value;
 			return token.transferFrom(beneficiary, to, value);
