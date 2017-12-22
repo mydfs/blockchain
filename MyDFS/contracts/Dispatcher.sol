@@ -7,24 +7,21 @@ import './MyDFSGame.sol';
 
 contract Dispatcher {
 
-	address admin;
 	address service;
 
 	Token gameToken;
 	UserStats stats;
 	BrokerManager broker;
 
-	modifier owned() { if (msg.sender == admin) _; }
+	modifier owned() { if (msg.sender == service) _; }
 
 	function Dispatcher(
-		address gameTokenAddress,
-		address serviceAddress
+		address gameTokenAddress
 	) public {
-		admin = msg.sender;
+		service = msg.sender;
 		stats = new UserStats();
 		broker = new BrokerManager(address(stats), gameTokenAddress);
 		gameToken = Token(gameTokenAddress);
-		service = serviceAddress;
 	}
 
 	function createGame(
