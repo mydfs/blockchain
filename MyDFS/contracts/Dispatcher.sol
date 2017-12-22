@@ -20,7 +20,7 @@ contract Dispatcher {
 	) public {
 		service = msg.sender;
 		stats = new UserStats();
-		broker = new BrokerManager(address(stats), gameTokenAddress);
+		broker = new BrokerManager(gameTokenAddress, address(stats));
 		gameToken = Token(gameTokenAddress);
 	}
 
@@ -33,9 +33,9 @@ contract Dispatcher {
 	)
 		external
 		owned
-		returns (address game)
+		returns (address)
 	{
-		game = new MyDFSGame(
+		MyDFSGame game = new MyDFSGame(
 			id, 
 			gameEntryValue,
 			address(gameToken),
@@ -45,8 +45,8 @@ contract Dispatcher {
 			serviceFeeValue,
 			smallGameWinnersPercents,
 			largeGameWinnersPercents);
-		stats.approve(game);
-		return game;
+		stats.approve(address(game));
+		return address(game);
 	}
 
 	function startGame(

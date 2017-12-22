@@ -17,7 +17,7 @@ contract StandardToken is Token {
         uint256 value
     )
         external 
-        returns (bool success) 
+        returns (bool) 
     {
         require(to != address(0));
         if (balances[msg.sender] >= value && value > 0) {
@@ -35,7 +35,7 @@ contract StandardToken is Token {
         uint256 value
     ) 
         external 
-        returns (bool success)
+        returns (bool)
     {
         require(from != address(0) && to != address(0));
         if (balances[from] >= value && allowed[from][msg.sender] >= value && value > 0) {
@@ -53,7 +53,7 @@ contract StandardToken is Token {
         uint256 value
     )
         external
-        returns (bool success) 
+        returns (bool) 
     {
         allowed[msg.sender][spender] += value;
         Approval(msg.sender, spender, allowed[msg.sender][spender]);
@@ -66,7 +66,7 @@ contract StandardToken is Token {
         uint256 value
     )
         external
-        returns (bool success) 
+        returns (bool) 
     {
         require(spender != address(0));
         allowed[msg.sender][spender] -= value;
@@ -74,7 +74,7 @@ contract StandardToken is Token {
         return true;
     }
 
-    function balanceOf(address owner) external constant returns (uint256 balance) {
+    function balanceOf(address owner) external constant returns (uint256) {
         return balances[owner];
     }
 

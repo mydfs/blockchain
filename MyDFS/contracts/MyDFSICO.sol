@@ -151,7 +151,7 @@ contract MyDFSICO {
     ) 
         public
         constant
-        returns (uint16 value)
+        returns (uint16)
     {
         for (uint256 i = bonuses.length - 1; i >= 0; i--){
             if (amount >= bonuses[i].amount){

@@ -109,7 +109,7 @@ contract MyDFSPreICO {
     ) 
         public
         constant
-        returns (uint16 value)
+        returns (uint16)
     {
         for (uint256 i = bonusesCount - 1; i >= 0; i--){
             if (amount >= bonuses[i].amount * 1 ether){

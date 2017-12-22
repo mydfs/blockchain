@@ -28,14 +28,10 @@ contract BrokerManager is Broker {
 	) 
 		public
 	{
-		require(tokenAddress != address(0)
-			&& statsAddress != address(0));
 		token = Token(tokenAddress);
 		stats = Stats(statsAddress);
 	}
 
-	//call this method before hire
-	//gameToken.approve(<broker address>, amount to invest);
 	function hire(
 		address user, 
 		uint256 tokensAmount
@@ -61,7 +57,7 @@ contract BrokerManager is Broker {
 	)
 		external
 		constant
-		returns (uint16 fee)
+		returns (uint16)
 	{
 		return allowed[beneficiary][user].userFee;
 	}
@@ -72,7 +68,7 @@ contract BrokerManager is Broker {
 	) 
 		public
 		constant
-		returns (uint256 remaining) 
+		returns (uint256) 
 	{
 		return allowed[beneficiary][user].amount;
 	}

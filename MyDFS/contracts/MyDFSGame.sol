@@ -13,7 +13,7 @@ contract MyDFSGame {
 
 	MyDFSGameLogic.Data data;
 
-	uint64 gameId;
+	uint64 public gameId;
 	uint32 public gameEntry;
 	uint8 public serviceFee;
 
@@ -45,14 +45,6 @@ contract MyDFSGame {
 	) 
 		public 
 	{
-		require(gameEntryValue > 0
-			&& gameTokenAddress != address(0)
-			&& statsAddress != address(0)
-			&& brokerAddress != address(0)
-			&& serviceAddress != address(0)
-			&& smallGameWinnersPercents.length > 0
-			&& largeGameWinnersPercents.length > 0);
-
 		data.smallGameRules = smallGameWinnersPercents;
 		data.largeGameRules = largeGameWinnersPercents;
         
@@ -167,7 +159,7 @@ contract MyDFSGame {
 	) 
 		public
 		constant
-		returns (uint256 prize)
+		returns (uint256)
 	{
 		return gameToken.balanceOf(address(this)) * (100 - serviceFee) / 100;
 	} 
