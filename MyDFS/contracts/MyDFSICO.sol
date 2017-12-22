@@ -69,7 +69,7 @@ contract MyDFSICO {
         uint durationInMinutes,
         uint szaboCostOfEachToken,
         address addressOfTokenUsedAsReward,
-        uint32[] bonusesEthAmount,
+        uint32[] bonusesTokenAmount,
         uint16[] bonusesValues
     ) public {
         require(ifSuccessfulSendTo != address(0)
@@ -79,7 +79,7 @@ contract MyDFSICO {
             && durationInMinutes > 0
             && szaboCostOfEachToken > 0
             && addressOfTokenUsedAsReward != address(0)
-            && bonusesEthAmount.length == bonusesValues.length);
+            && bonusesTokenAmount.length == bonusesValues.length);
         admin = msg.sender;
         beneficiary = ifSuccessfulSendTo;
         softFundingGoal = softFundingGoalInEthers * 1 ether;
@@ -87,8 +87,8 @@ contract MyDFSICO {
         deadline = now + durationInMinutes * 1 minutes;
         price = szaboCostOfEachToken * 1 szabo;
         tokenReward = Token(addressOfTokenUsedAsReward);
-        for (uint256 i = 0; i < bonusesEthAmount.length; i++){
-            bonuses.push(Bonus(bonusesEthAmount[i], bonusesValues[i]));
+        for (uint256 i = 0; i < bonusesTokenAmount.length; i++){
+            bonuses.push(Bonus(bonusesTokenAmount[i], bonusesValues[i]));
         }
     }
 
@@ -100,7 +100,7 @@ contract MyDFSICO {
             amount = availableAmount;
         }
         uint count = amount / price + (amount % price > 0 ? 1 : 0);
-        uint16 bonus = getBonusOf(amount);
+        uint16 bonus = getBonusOf(count);
         uint bonusCount = bonus * count / 100 + ((bonus * count) % 100 > 0 ? 1 : 0);
         count += bonusCount;
         if (tokenReward.balanceOf(address(this)) >= count){
@@ -154,7 +154,7 @@ contract MyDFSICO {
         returns (uint16 value)
     {
         for (uint256 i = bonuses.length - 1; i >= 0; i--){
-            if (amount >= bonuses[i].amount * 1 ether){
+            if (amount >= bonuses[i].amount){
                 return bonuses[i].value;
             }
         }

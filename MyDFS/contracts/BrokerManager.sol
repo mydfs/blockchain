@@ -55,26 +55,6 @@ contract BrokerManager is Broker {
 		allowed[user][msg.sender].amount = 0;
 	}
 
-	function transferFrom(
-		address beneficiary,
-		address user, 
-		address to, 
-		uint256 value
-	) 
-		external
-		returns (bool success)
-	{
-		require(beneficiary != address(0)
-			&& user != address(0)
-			&& to != address(0));
-		if (allowance(beneficiary, user) >= value){
-			allowed[beneficiary][user].amount -= value;
-			return token.transferFrom(beneficiary, to, value);
-		} else {
-			revert();
-		}
-	}
-
 	function getUserFee(
 		address beneficiary, 
 		address user
