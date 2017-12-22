@@ -13,6 +13,8 @@ contract Dispatcher {
 	UserStats stats;
 	BrokerManager broker;
 
+	mapping (address => uint256) balances;
+
 	modifier owned() { if (msg.sender == service) _; }
 
 	function Dispatcher(
@@ -79,33 +81,71 @@ contract Dispatcher {
 	}
 
 	function participate(
+		address user,
 		int32[] team, 
 		address game
 	)
 		external
+		owned
 	{
 		MyDFSGame gameInstance = MyDFSGame(game);
-		if (gameToken.transferFrom(msg.sender, game, gameInstance.gameEntry())){
-			gameInstance.participate(msg.sender, team);
+		if (balanceOf(user) >=  gameInstance.gameEntry() && gameToken.transfer(game, gameInstance.gameEntry())){
+			gameInstance.participate(user, team);
 		} else {
 			revert();
 		} 
 	}
 
 	function participateBeneficiary(
+		address user,
 		int32[] team, 
 		address game,
 		address beneficiary
 	)
 		external
+		owned
 	{
 		MyDFSGame gameInstance = MyDFSGame(game);
-		if (broker.allowance(beneficiary, msg.sender) >= gameInstance.gameEntry()){
+		if (broker.allowance(beneficiary, user) >= gameInstance.gameEntry()){
 			gameToken.transferFrom(beneficiary, game, gameInstance.gameEntry());
-			gameInstance.participateBeneficiary(msg.sender, team, beneficiary);
+			gameInstance.participateBeneficiary(user, team, beneficiary);
 		} else {
 			revert();
 		} 
 	}
+
+	function deposit(
+		uint256 sum
+	) 
+		external 
+	{
+		if (gameToken.balanceOf(msg.sender) >= sum) {
+			if (gameToken.transferFrom(msg.sender, address(this), sum)) {
+				balances[msg.sender] += sum;
+			}
+		}
+	}
+
+	function withdraw(
+		uint256 sum
+	) 
+		external
+	{
+		if (balances[msg.sender] >= sum) {
+			if (gameToken.transfer(msg.sender, sum)) {
+				balances[msg.sender] -= sum;
+			}
+		}
+	}
+
+	function balanceOf(
+		address user
+	)
+		public
+		constant
+		returns (uint256)
+	{
+		return balances[user];
+	} 
 
 }
