@@ -78,7 +78,81 @@ contract TestDispatcher{
 		team[0] = 1;
 		team[1] = 2;
 		team[2] = 3;
-		dispatcher.participate(0x627306090abab3a6e1400e9345bc60c78a8bef57, team, address(game));
+		dispatcher.participate(deployerAddress, team, address(game));
+
+		team[0] = 3;
+		team[1] = 4;
+		team[2] = 5;
+		dispatcher.participate(deployerAddress, team, address(game));
+	}
+
+	function testFinishGame(){
+		int32[] memory sportsmanFlatData = new int32[](35);
+
+        sportsmanFlatData[0] = 1;
+        sportsmanFlatData[1] = 2;
+        sportsmanFlatData[2] = 2;
+        sportsmanFlatData[3] = 1;
+        sportsmanFlatData[4] = 2;
+        sportsmanFlatData[5] = 2;
+        sportsmanFlatData[6] = 2;
+        sportsmanFlatData[7] = 6;
+        sportsmanFlatData[8] = 1;
+        sportsmanFlatData[9] = 3;
+        sportsmanFlatData[10] = 2;
+        sportsmanFlatData[11] = 2;
+        sportsmanFlatData[12] = 3;
+        sportsmanFlatData[13] = 1;
+        sportsmanFlatData[14] = 3;
+        sportsmanFlatData[15] = 2;
+        sportsmanFlatData[16] = 4;
+        sportsmanFlatData[17] = 1;
+        sportsmanFlatData[18] = 1;
+        sportsmanFlatData[19] = 2;
+        sportsmanFlatData[20] = 3;
+        sportsmanFlatData[21] = 4;
+        sportsmanFlatData[22] = 1;
+        sportsmanFlatData[23] = 4;
+        sportsmanFlatData[24] = 1;
+        sportsmanFlatData[25] = 1;
+        sportsmanFlatData[26] = 2;
+        sportsmanFlatData[27] = 2;
+        sportsmanFlatData[28] = 5;
+        sportsmanFlatData[29] = 1;
+        sportsmanFlatData[30] = 4;
+        sportsmanFlatData[31] = 1;
+        sportsmanFlatData[32] = 1;
+        sportsmanFlatData[33] = 2;
+        sportsmanFlatData[34] = 3;
+
+        int32[] memory rulesFlat = new int32[](24);
+
+        rulesFlat[0] = 1;
+        rulesFlat[1] = 1;
+        rulesFlat[2] = 40;
+        rulesFlat[3] = 1;
+        rulesFlat[4] = 2;
+        rulesFlat[5] = 40;
+        rulesFlat[6] = 2;
+        rulesFlat[7] = 1;
+        rulesFlat[8] = 10;
+        rulesFlat[9] = 2;
+        rulesFlat[10] = 2;
+        rulesFlat[11] = 80;
+        rulesFlat[12] = 3;
+        rulesFlat[13] = 1;
+        rulesFlat[14] = 100;
+        rulesFlat[15] = 3;
+        rulesFlat[16] = 2;
+        rulesFlat[17] = 10;
+        rulesFlat[18] = 4;
+        rulesFlat[19] = 1;
+        rulesFlat[20] = 20;
+        rulesFlat[21] = 4;
+        rulesFlat[22] = 2;
+        rulesFlat[23] = 80;
+
+		dispatcher.finishGame(address(game), sportsmanFlatData, rulesFlat);
 	}
 
 	function testStartGame() external {
