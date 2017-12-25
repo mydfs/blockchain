@@ -65,4 +65,8 @@ contract UserStats is Stats {
 		return users[user].feePercent;
 	}
 
+	function allowance(address game) external constant returns (bool) {
+		return gameAddresses[game];
+	}
+
 }
