@@ -7,11 +7,11 @@ import './MyDFSGame.sol';
 
 contract Dispatcher {
 
-	address service;
+	address public service;
 
-	Token gameToken;
-	UserStats stats;
-	BrokerManager broker;
+	Token public gameToken;
+	UserStats public stats;
+	BrokerManager public broker;
 
 	mapping (address => uint256) balances;
 

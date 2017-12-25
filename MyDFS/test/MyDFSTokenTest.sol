@@ -6,13 +6,13 @@ import "../contracts/MyDFSToken.sol";
 
 contract MyDFSTokenTest{
 
-	function testInitialBalance() external {
-		MyDFSToken token = MyDFSToken(DeployedAddresses.MyDFSToken());
+	// function testInitialBalance() external {
+	// 	MyDFSToken token = MyDFSToken(DeployedAddresses.MyDFSToken());
 
-		uint expected = 100000;
+	// 	uint expected = 100000;
 
-		Assert.equal(token.balanceOf(tx.origin), expected, "Owner should have 100000 tokens initially");
-	}
+	// 	Assert.equal(token.balanceOf(tx.origin), expected, "Owner should have 100000 tokens initially");
+	// }
 
 	// function testTransferBalance() external {
 	// 	MyDFSToken token = MyDFSToken(DeployedAddresses.MyDFSToken());
