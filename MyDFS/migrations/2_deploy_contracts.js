@@ -6,8 +6,9 @@ var GameLib = artifacts.require("./GameLogic.sol");
 // var Stats = artifacts.require("./Stats.sol");
 
 module.exports = function(deployer) {
-  deployer.deploy(GameLib);
-  deployer.deploy(MyDFSToken).then(function(){
-    return deployer.deploy(Dispatcher, MyDFSToken.address);
-  });
+	deployer.deploy(GameLib).then(function(){
+		return deployer.deploy(MyDFSToken).then(function(){
+    		return deployer.deploy(Dispatcher, MyDFSToken.address, GameLib.address);
+  		});
+  	});
 };

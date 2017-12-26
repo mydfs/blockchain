@@ -8,6 +8,7 @@ import './Game.sol';
 contract Dispatcher {
 
 	address public service;
+	address public gameLogic;
 
 	Token public gameToken;
 	UserStats public stats;
@@ -18,9 +19,11 @@ contract Dispatcher {
 	modifier owned() { require(msg.sender == service); _; }
 
 	function Dispatcher(
-		address gameTokenAddress
+		address gameTokenAddress,
+		address _gameLogic
 	) public {
 		service = msg.sender;
+		gameLogic = _gameLogic;
 		stats = new UserStats();
 		broker = new BrokerManager(gameTokenAddress, address(stats));
 		gameToken = Token(gameTokenAddress);
@@ -36,7 +39,8 @@ contract Dispatcher {
 		owned
 		returns (address)
 	{
-		Game game = new Game(
+		address game = new Game(
+			gameLogic,
 			address(gameToken),
 			address(stats),
 			address(broker),
@@ -45,8 +49,8 @@ contract Dispatcher {
 			serviceFeeValue,
 			smallGameWinnersPercents,
 			largeGameWinnersPercents);
-		stats.approve(address(game));
-		return address(game);
+		stats.approve(game);
+		return game;
 	}
 
 	function startGame(
