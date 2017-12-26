@@ -27,7 +27,6 @@ contract Dispatcher {
 	}
 
 	function createGame(
-		uint64 id,
 		uint32 gameEntryValue,
 		uint8 serviceFeeValue,
 		uint8[] smallGameWinnersPercents,
@@ -38,12 +37,11 @@ contract Dispatcher {
 		returns (address)
 	{
 		Game game = new Game(
-			id, 
-			gameEntryValue,
 			address(gameToken),
 			address(stats),
 			address(broker),
 			service,
+			gameEntryValue,
 			serviceFeeValue,
 			smallGameWinnersPercents,
 			largeGameWinnersPercents);
@@ -90,7 +88,7 @@ contract Dispatcher {
 	{
 		Game gameInstance = Game(game);
 		require(balanceOf(user) >=  gameInstance.gameEntry() && gameToken.transfer(game, gameInstance.gameEntry()));
-		gameInstance.participate(user, team);
+		gameInstance.addParticipant(user, team);
 	}
 
 	function participateBeneficiary(
@@ -105,7 +103,7 @@ contract Dispatcher {
 		Game gameInstance = Game(game);
 		require(broker.allowance(beneficiary, user) >= gameInstance.gameEntry());
 		gameToken.transferFrom(beneficiary, game, gameInstance.gameEntry());
-		gameInstance.participateBeneficiary(user, team, beneficiary);
+		gameInstance.addSponsoredParticipant(user, team, beneficiary);
 	}
 
 	function deposit(

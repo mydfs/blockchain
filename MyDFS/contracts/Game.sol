@@ -13,7 +13,6 @@ contract Game {
 
 	GameLogic.Data data;
 
-	uint64 public gameId;
 	uint32 public gameEntry;
 	uint8 public serviceFee;
 
@@ -27,19 +26,18 @@ contract Game {
 	modifier beforeStart() { require(gameState == State.TeamCreation); _; }
 	modifier inProgress() {  require(gameState == State.InProgress); _; }
 
-	event Participate(address user);
-	event Winner(address user, uint256 prize);
+	event ParticipantAdded(address user);
+	event PrizeFor(address user, uint256 prize);
 
 	//externals
 
 	function Game(
-		uint64 id,
-		uint32 gameEntryValue,
 		address gameTokenAddress,
 		address statsAddress,
 		address brokerAddress,
 		address serviceAddress,
-		uint8 serviceFeeValue,
+		uint32 _gameEntry,
+		uint8 _serviceFee,
 		uint8[] smallGameWinnersPercents,
 		uint8[] largeGameWinnersPercents
 	) 
@@ -51,16 +49,15 @@ contract Game {
         dispatcher = msg.sender;
 		gameState = State.TeamCreation;
 
-		gameId = id;
-		gameEntry = gameEntryValue;
-		serviceFee = serviceFeeValue;
+		gameEntry = _gameEntry;
+		serviceFee = _serviceFee;
 		service = serviceAddress;
 		gameToken = Token(gameTokenAddress);
 		stats = Stats(statsAddress);
 		broker = Broker(brokerAddress);
 	}
 
-	function participate(
+	function addParticipant(
 		address user,
 		int32[] team
 	)
@@ -70,11 +67,11 @@ contract Game {
 	{
 		require(data.teamsCount[user] <= 4);
 		data.players.push(GameLogic.Player(user, address(0x0), team, 0, 0));
-		Participate(user);
+		ParticipantAdded(user);
 		data.teamsCount[user]++;
 	}
 
-	function participateBeneficiary(
+	function addSponsoredParticipant(
 		address user,
 		int32[] team,
 		address beneficiary
@@ -85,7 +82,7 @@ contract Game {
 	{
 		require(data.teamsCount[user] <= 4);
 		data.players.push(GameLogic.Player(user, beneficiary, team, 0, 0));
-		Participate(user);
+		ParticipantAdded(user);
 		data.teamsCount[user]++;
 	}
 
@@ -125,26 +122,26 @@ contract Game {
 
 	function sendPrizes() internal {
 		for (uint32 i = 0; i < data.players.length; i++) {
-			if (data.players[i].beneficiary > 0){
-				uint256 userPrize = broker.getUserFee(data.players[i].beneficiary, 
-					data.players[i].user) * data.players[i].prize / 100;
-				uint256 beneficiaryPrize = data.players[i].prize - userPrize;
-				if (userPrize > 0){
-					gameToken.transfer(data.players[i].user, userPrize);
-				}
-				Winner(data.players[i].user, userPrize);
-				if (beneficiaryPrize > 0){
-					gameToken.transfer(data.players[i].beneficiary, beneficiaryPrize);
-				}
-				Winner(data.players[i].beneficiary, beneficiaryPrize);
+			address player = data.players[i].user;
+			uint256 playerPrize = 0;
+			address beneficiary = data.players[i].beneficiary;
+
+			if (beneficiary > 0){
+				playerPrize = calculateUserPrize(i);
+				uint256 beneficiaryPrize = data.players[i].prize - playerPrize;
+				gameToken.transfer(beneficiary, beneficiaryPrize);
+				PrizeFor(beneficiary, beneficiaryPrize);
 			} else {
-				if (data.players[i].prize > 0){
-					gameToken.transfer(data.players[i].user, data.players[i].prize);
-				}
-				Winner(data.players[i].user, data.players[i].prize);
+				playerPrize = data.players[i].prize;
 			}
+			gameToken.transfer(player, playerPrize);
+			PrizeFor(player, playerPrize);
 		}
 		gameToken.transfer(service, gameToken.balanceOf(address(this)));
+	}
+
+	function calculateUserPrize(uint i) internal view returns (uint256){
+		return broker.getUserFee(data.players[i].beneficiary, data.players[i].user) * data.players[i].prize / 100;
 	}
 
 	//public
