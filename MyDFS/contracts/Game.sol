@@ -3,15 +3,15 @@ pragma solidity ^0.4.16;
 import './interface/Token.sol';
 import './interface/Stats.sol';
 import './interface/Broker.sol';
-import './MyDFSGameLogic.sol';
+import './GameLogic.sol';
 
-contract MyDFSGame {
+contract Game {
 
 	enum State { TeamCreation, InProgress, Finished, Canceled }
 
 	State public gameState;
 
-	MyDFSGameLogic.Data data;
+	GameLogic.Data data;
 
 	uint64 public gameId;
 	uint32 public gameEntry;
@@ -23,16 +23,16 @@ contract MyDFSGame {
 	Stats stats;
 	Broker broker;
 
-	modifier owned() { if (msg.sender == dispatcher) _; }
-	modifier beforeStart() { if (gameState == State.TeamCreation) _; }
-	modifier inProgress() { if (gameState == State.InProgress) _; }
+	modifier owned() { require(msg.sender == dispatcher); _; }
+	modifier beforeStart() { require(gameState == State.TeamCreation); _; }
+	modifier inProgress() {  require(gameState == State.InProgress); _; }
 
 	event Participate(address user);
 	event Winner(address user, uint256 prize);
 
 	//externals
 
-	function MyDFSGame(
+	function Game(
 		uint64 id,
 		uint32 gameEntryValue,
 		address gameTokenAddress,
@@ -68,13 +68,10 @@ contract MyDFSGame {
 		beforeStart
 		owned
 	{
-		if (data.teamsCount[user] <= 4){
-			data.players.push(MyDFSGameLogic.Player(user, address(0x0), team, 0, 0));
-			Participate(user);
-			data.teamsCount[user]++;
-		} else {
-			revert();
-		}
+		require(data.teamsCount[user] <= 4);
+		data.players.push(GameLogic.Player(user, address(0x0), team, 0, 0));
+		Participate(user);
+		data.teamsCount[user]++;
 	}
 
 	function participateBeneficiary(
@@ -86,13 +83,10 @@ contract MyDFSGame {
 		beforeStart
 		owned
 	{
-		if (data.teamsCount[user] <= 4){
-			data.players.push(MyDFSGameLogic.Player(user, beneficiary, team, 0, 0));
-			Participate(user);
-			data.teamsCount[user]++;
-		} else {
-			revert();
-		}
+		require(data.teamsCount[user] <= 4);
+		data.players.push(GameLogic.Player(user, beneficiary, team, 0, 0));
+		Participate(user);
+		data.teamsCount[user]++;
 	}
 
 	function startGame() external owned {
@@ -118,12 +112,12 @@ contract MyDFSGame {
 		owned
 		inProgress
 	{
-	    MyDFSGameLogic.compileRules(data, rulesFlat);
-		MyDFSGameLogic.compileGameStats(data, sportsmenFlatData);
-		MyDFSGameLogic.calculatePlayersScores(data);
-		MyDFSGameLogic.sortPlayers(data);
-		MyDFSGameLogic.calculateWinners(data, totalPrize());
-		MyDFSGameLogic.updateUsersStats(stats, data.players, gameEntry);
+	    GameLogic.compileRules(data, rulesFlat);
+		GameLogic.compileGameStats(data, sportsmenFlatData);
+		GameLogic.calculatePlayersScores(data);
+		GameLogic.sortPlayers(data);
+		GameLogic.calculateWinners(data, totalPrize());
+		GameLogic.updateUsersStats(stats, data.players, gameEntry);
 		sendPrizes();
 
 		gameState = State.Finished;

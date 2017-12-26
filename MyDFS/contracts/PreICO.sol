@@ -2,7 +2,7 @@ pragma solidity ^0.4.16;
 
 import './interface/Token.sol';
 
-contract MyDFSPreICO {
+contract PreICO {
     
     //структура бонуса 100+eth -> 1%
     struct Bonus{
@@ -28,16 +28,16 @@ contract MyDFSPreICO {
     event TokenPurchase(address investor, uint sum, uint tokensCount, uint bonusTokens);
     event Refund(address investor, uint sum);
 
-    modifier active() { if (now < deadline && !emergencyPaused && amountRaised < hardFundingGoal) _; }
-    modifier finished() { if (now >= deadline) _; }
-    modifier verified() { if (msg.sender == admin) _; }
+    modifier active() { require(now < deadline && !emergencyPaused && amountRaised < hardFundingGoal); _; }
+    modifier finished() { require(now >= deadline); _; }
+    modifier verified() { require(msg.sender == admin); _; }
 
     /**
      * Constrctor function
      *
      * Setup the owner
      */
-    function MyDFSPreICO(
+    function PreICO(
         address ifSuccessfulSendTo,
         uint hardFundingGoalInEthers,
         uint durationInMinutes,
@@ -75,14 +75,11 @@ contract MyDFSPreICO {
         uint16 bonus = getBonusOf(amount);
         uint bonusCount = bonus * count / 100 + ((bonus * count) % 100 > 0 ? 1 : 0);
         count += bonusCount;
-        if (tokenReward.balanceOf(address(this)) >= count){
-            balances[msg.sender] += amount;
-            amountRaised += amount;
-            tokenReward.transfer(msg.sender, count);
-            TokenPurchase(msg.sender, amount, count, bonusCount);
-        } else {
-            revert();
-        }
+        require(tokenReward.balanceOf(address(this)) >= count);
+        balances[msg.sender] += amount;
+        amountRaised += amount;
+        tokenReward.transfer(msg.sender, count);
+        TokenPurchase(msg.sender, amount, count, bonusCount);
         if (amountRaised >= hardFundingGoal){
             HardGoalReached(amountRaised);
         } 

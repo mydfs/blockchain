@@ -38,12 +38,9 @@ contract BrokerManager is Broker {
 	)
 		external
 	{
-		if (allowed[msg.sender][user].amount == 0){
-			allowed[msg.sender][user] = Term(tokensAmount, stats.getFeePercent(user));
-			userBrokers[user][msg.sender] = Term(tokensAmount, stats.getFeePercent(user));
-		} else {
-			revert();
-		}
+		require(allowed[msg.sender][user].amount == 0);
+		allowed[msg.sender][user] = Term(tokensAmount, stats.getFeePercent(user));
+		userBrokers[user][msg.sender] = Term(tokensAmount, stats.getFeePercent(user));
 	}
 
 	function fire(address user) external {

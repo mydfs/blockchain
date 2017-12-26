@@ -17,8 +17,8 @@ contract UserStats is Stats {
 
 	address public owner;
 
-	modifier allowed() { if (gameAddresses[msg.sender]) _; }
-	modifier owned() { if (msg.sender == owner) _; }
+	modifier allowed() { require(gameAddresses[msg.sender]); _; }
+	modifier owned() { require(msg.sender == owner); _; }
 
 	function UserStats() public {
 		owner = msg.sender;

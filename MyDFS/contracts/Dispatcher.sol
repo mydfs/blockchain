@@ -3,7 +3,7 @@ pragma solidity ^0.4.16;
 import './interface/Token.sol';
 import './UserStats.sol';
 import './BrokerManager.sol';
-import './MyDFSGame.sol';
+import './Game.sol';
 
 contract Dispatcher {
 
@@ -15,7 +15,7 @@ contract Dispatcher {
 
 	mapping (address => uint256) balances;
 
-	modifier owned() { if (msg.sender == service) _; }
+	modifier owned() { require(msg.sender == service); _; }
 
 	function Dispatcher(
 		address gameTokenAddress
@@ -37,7 +37,7 @@ contract Dispatcher {
 		owned
 		returns (address)
 	{
-		MyDFSGame game = new MyDFSGame(
+		Game game = new Game(
 			id, 
 			gameEntryValue,
 			address(gameToken),
@@ -57,7 +57,7 @@ contract Dispatcher {
 		external
 		owned
 	{
-		MyDFSGame(game).startGame();
+		Game(game).startGame();
 	}
 
 	function cancelGame(
@@ -66,7 +66,7 @@ contract Dispatcher {
 		external
 		owned 
 	{
-		MyDFSGame(game).cancelGame();
+		Game(game).cancelGame();
 	}
 
 	function finishGame(
@@ -77,7 +77,7 @@ contract Dispatcher {
 		external
 		owned
 	{
-		MyDFSGame(game).finishGame(sportsmenFlatData, rulesFlat);
+		Game(game).finishGame(sportsmenFlatData, rulesFlat);
 	}
 
 	function participate(
@@ -88,12 +88,9 @@ contract Dispatcher {
 		external
 		owned
 	{
-		MyDFSGame gameInstance = MyDFSGame(game);
-		if (balanceOf(user) >=  gameInstance.gameEntry() && gameToken.transfer(game, gameInstance.gameEntry())){
-			gameInstance.participate(user, team);
-		} else {
-			revert();
-		} 
+		Game gameInstance = Game(game);
+		require(balanceOf(user) >=  gameInstance.gameEntry() && gameToken.transfer(game, gameInstance.gameEntry()));
+		gameInstance.participate(user, team);
 	}
 
 	function participateBeneficiary(
@@ -105,13 +102,10 @@ contract Dispatcher {
 		external
 		owned
 	{
-		MyDFSGame gameInstance = MyDFSGame(game);
-		if (broker.allowance(beneficiary, user) >= gameInstance.gameEntry()){
-			gameToken.transferFrom(beneficiary, game, gameInstance.gameEntry());
-			gameInstance.participateBeneficiary(user, team, beneficiary);
-		} else {
-			revert();
-		} 
+		Game gameInstance = Game(game);
+		require(broker.allowance(beneficiary, user) >= gameInstance.gameEntry());
+		gameToken.transferFrom(beneficiary, game, gameInstance.gameEntry());
+		gameInstance.participateBeneficiary(user, team, beneficiary);
 	}
 
 	function deposit(

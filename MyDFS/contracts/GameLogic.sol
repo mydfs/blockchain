@@ -4,7 +4,7 @@ import './interface/Token.sol';
 import './interface/Stats.sol';
 import './interface/Broker.sol';
 
-library MyDFSGameLogic {
+library GameLogic {
 
 	struct Player {
 		address user;

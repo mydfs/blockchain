@@ -2,7 +2,7 @@ pragma solidity ^0.4.16;
 
 import './interface/Token.sol';
 
-contract MyDFSICO {
+contract ICO {
     
     //структура бонуса 100+eth -> 1%
     struct Bonus{
@@ -47,13 +47,13 @@ contract MyDFSICO {
     event Refund(address investor, uint sum);
 
     //ICO активно
-    modifier active() { if (now < deadline && !emergencyPaused && amountRaised < hardFundingGoal) _; }
+    modifier active() { require(now < deadline && !emergencyPaused && amountRaised < hardFundingGoal); _; }
     //если не достигли soft cap
-    modifier goalNotReached() { if (now >= deadline && amountRaised < softFundingGoal) _; }
+    modifier goalNotReached() { require(now >= deadline && amountRaised < softFundingGoal); _; }
     //что ICO успешно завершилось
-    modifier successed() { if ((now >= deadline && amountRaised >= softFundingGoal) || amountRaised >= hardFundingGoal) _; }
+    modifier successed() { require((now >= deadline && amountRaised >= softFundingGoal) || amountRaised >= hardFundingGoal); _; }
     //доступно только админу
-    modifier verified() { if (msg.sender == admin) _; }
+    modifier verified() { require(msg.sender == admin); _; }
 
     //external
 
@@ -62,7 +62,7 @@ contract MyDFSICO {
      *
      * Setup the owner
      */
-    function MyDFSICO(
+    function ICO(
         address ifSuccessfulSendTo,
         uint softFundingGoalInEthers,
         uint hardFundingGoalInEthers,
@@ -103,14 +103,11 @@ contract MyDFSICO {
         uint16 bonus = getBonusOf(count);
         uint bonusCount = bonus * count / 100 + ((bonus * count) % 100 > 0 ? 1 : 0);
         count += bonusCount;
-        if (tokenReward.balanceOf(address(this)) >= count){
-            balances[msg.sender] += amount;
-            amountRaised += amount;
-            tokenReward.transfer(msg.sender, count);
-            TokenPurchase(msg.sender, amount, count, bonusCount);
-        } else {
-            revert();
-        }
+        require(tokenReward.balanceOf(address(this)) >= count);
+        balances[msg.sender] += amount;
+        amountRaised += amount;
+        tokenReward.transfer(msg.sender, count);
+        TokenPurchase(msg.sender, amount, count, bonusCount);
         if (!softCapReached && amountRaised >= softFundingGoal){
             softCapReached = true;
             SoftGoalReached(amountRaised);
