@@ -78,7 +78,7 @@ contract Dispatcher {
 		Game(game).finishGame(sportsmenFlatData, rulesFlat);
 	}
 
-	function participate(
+	function addParticipant(
 		address user,
 		int32[] team, 
 		address game
@@ -91,7 +91,7 @@ contract Dispatcher {
 		gameInstance.addParticipant(user, team);
 	}
 
-	function participateBeneficiary(
+	function addSponsoredParticipant(
 		address user,
 		int32[] team, 
 		address game,
@@ -106,16 +106,16 @@ contract Dispatcher {
 		gameInstance.addSponsoredParticipant(user, team, beneficiary);
 	}
 
+	function tokenFallback(address from, uint value, bytes data) public {
+		deposit(from, value);
+	}
+
 	function deposit(
-		uint256 sum
+		uint sum
 	) 
 		external 
 	{
-		if (gameToken.balanceOf(msg.sender) >= sum) {
-			if (gameToken.transferFrom(msg.sender, address(this), sum)) {
-				balances[msg.sender] += sum;
-			}
-		}
+		deposit(msg.sender, sum);
 	}
 
 	function withdraw(
@@ -139,5 +139,12 @@ contract Dispatcher {
 	{
 		return balances[user];
 	} 
+
+	function deposit(address from, uint sum) internal {
+		require(gameToken.balanceOf(from) >= sum); 
+		if (gameToken.transferFrom(from, address(this), sum)) {
+			balances[msg.sender] += sum;
+		}	
+	}
 
 }
