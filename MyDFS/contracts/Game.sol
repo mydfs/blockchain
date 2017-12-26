@@ -16,6 +16,8 @@ contract Game {
 	uint32 public gameEntry;
 	uint8 public serviceFee;
 
+	mapping (address => uint8) teamsCount; 
+
 	address dispatcher;
 	address service;
 	Token gameToken;
@@ -65,10 +67,10 @@ contract Game {
 		beforeStart
 		owned
 	{
-		require(data.teamsCount[user] <= 4);
+		require(teamsCount[user] <= 4);
 		data.players.push(GameLogic.Player(user, address(0x0), team, 0, 0));
 		ParticipantAdded(user);
-		data.teamsCount[user]++;
+		teamsCount[user]++;
 	}
 
 	function addSponsoredParticipant(
@@ -80,10 +82,10 @@ contract Game {
 		beforeStart
 		owned
 	{
-		require(data.teamsCount[user] <= 4);
+		require(teamsCount[user] <= 4);
 		data.players.push(GameLogic.Player(user, beneficiary, team, 0, 0));
 		ParticipantAdded(user);
-		data.teamsCount[user]++;
+		teamsCount[user]++;
 	}
 
 	function startGame() external owned {
@@ -120,6 +122,25 @@ contract Game {
 		gameState = State.Finished;
 	}
 
+	function teamsCountOf(
+		address user
+	) 
+		external
+		view
+		returns (uint8)
+	{
+		return teamsCount[user];
+	} 
+
+	function totalPrize (
+	) 
+		public
+		view
+		returns (uint256)
+	{
+		return gameToken.balanceOf(address(this)) * (100 - serviceFee) / 100;
+	} 
+
 	function sendPrizes() internal {
 		for (uint32 i = 0; i < data.players.length; i++) {
 			address player = data.players[i].user;
@@ -143,17 +164,6 @@ contract Game {
 	function calculateUserPrize(uint i) internal view returns (uint256){
 		return broker.getUserFee(data.players[i].beneficiary, data.players[i].user) * data.players[i].prize / 100;
 	}
-
-	//public
-
-	function totalPrize (
-	) 
-		public
-		constant
-		returns (uint256)
-	{
-		return gameToken.balanceOf(address(this)) * (100 - serviceFee) / 100;
-	} 
 
 }
 

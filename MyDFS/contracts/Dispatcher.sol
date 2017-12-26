@@ -87,7 +87,7 @@ contract Dispatcher {
 		owned
 	{
 		Game gameInstance = Game(game);
-		require(balanceOf(user) >=  gameInstance.gameEntry() && gameToken.transfer(game, gameInstance.gameEntry()));
+		require(balanceOf(user) >= gameInstance.gameEntry() && gameToken.transfer(game, gameInstance.gameEntry()));
 		gameInstance.addParticipant(user, team);
 	}
 
@@ -101,8 +101,8 @@ contract Dispatcher {
 		owned
 	{
 		Game gameInstance = Game(game);
-		require(broker.allowance(beneficiary, user) >= gameInstance.gameEntry());
-		gameToken.transferFrom(beneficiary, game, gameInstance.gameEntry());
+		require(broker.allowance(beneficiary, user) >= gameInstance.gameEntry()
+			&& gameToken.transferFrom(beneficiary, game, gameInstance.gameEntry()));
 		gameInstance.addSponsoredParticipant(user, team, beneficiary);
 	}
 

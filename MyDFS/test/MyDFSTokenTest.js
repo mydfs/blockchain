@@ -40,8 +40,8 @@ contract('MyDFSToken', function(accounts){
 	    }).then(function(balance) {
 	    	two_ending_balance = balance.toNumber();
 
-	    	assert.equal(one_ending_balance, one_starting_balance - amount, "first should have balance - 10000 tokens");
-	    	assert.equal(two_ending_balance, two_starting_balance + amount, "second should have balance + 10000 tokens");
+	    	assert.equal(one_ending_balance, one_starting_balance - amount, "first should have balance - <amount> tokens");
+	    	assert.equal(two_ending_balance, two_starting_balance + amount, "second should have balance + <amount> tokens");
 	    });
 	});
 
@@ -71,7 +71,7 @@ contract('MyDFSToken', function(accounts){
 	    }).then(function() {
 	    	return token.allowance.call(account_one, account_two);
 	    }).then(function(allowance) {
-	    	assert(allowance.valueOf(), amount, "allowance is 10000 tokens");
+	    	assert(allowance.valueOf(), amount, "allowance is <amount> tokens");
 	    	return token.transferFrom(account_one, account_two, amount, {from: account_two});
 	    }).then(function() {
 	    	return token.balanceOf.call(account_one);
@@ -81,8 +81,8 @@ contract('MyDFSToken', function(accounts){
 	    }).then(function(balance) {
 	    	two_ending_balance = balance.toNumber();
 
-	    	assert.equal(one_ending_balance, one_starting_balance - amount, "first should have balance - 10000 tokens");
-	    	assert.equal(two_ending_balance, two_starting_balance + amount, "second should have balance + 10000 tokens");
+	    	assert.equal(one_ending_balance, one_starting_balance - amount, "first should have balance - <amount> tokens");
+	    	assert.equal(two_ending_balance, two_starting_balance + amount, "second should have balance + <amount> tokens");
 	    });
 	});
 
