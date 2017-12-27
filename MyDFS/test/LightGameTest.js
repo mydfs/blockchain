@@ -15,57 +15,67 @@ contract('Game', function(accounts){
 
 		return Game.deployed().then(function(instance){
 			game = instance;
-			return game.dispatcher.call();
-		}).then(function(result){
-			console.log("dispatcher:" + result);
-			return game.service.call();
-		}).then(function(result){
-			console.log("service   :" + result);
-			return game.gameToken.call();
-		}).then(function(result){
-			console.log("GameToken :" + result);
-			return game.stats.call();
-		}).then(function(result){
-			console.log("Stats     :" + result);
-			return game.broker.call();
-		}).then(function(result){
-			console.log("Broker    :" + result);
 			return game.gameState.call();
 		}).then(function(state){
-			console.log("state     :" + state.toNumber());
 			assert.equal(state.toNumber(), 0, "game state is team creation");
 			return game.serviceFee.call();
 		}).then(function(serviceFee){
-			console.log("fee       :" + serviceFee.valueOf());
 			return game.addParticipant(account_one, team_one);
 		}).then(function(){
 			return game.teamsCountOf.call(account_one);
 		}).then(function(count){
-			console.log("count     :" + count);
 			assert.equal(count, 1, "account_one has 1 team");
 			return game.addParticipant(account_one, team_two);
 		}).then(function(){
 			return game.teamsCountOf.call(account_one);
 		}).then(function(count){
-			console.log("count     :" + count);
 			assert.equal(count, 2, "account_one has 2 teams");
 			return game.gameState.call();
 		}).then(function(state){
-			console.log("state     :" + state.toNumber());
 			assert.equal(state.toNumber(), 0, "game state is still team creation");
 			return game.startGame();
 		}).then(function(){
 			return game.gameState.call();
 		}).then(function(state){
-			console.log("state     :" + state.toNumber());
 			assert.equal(state.toNumber(), 1, "game state is In Progress");
-			return game.finishGame(sportsmanFlat, rulesFlat)
+			return game.finishGame()
 		}).then(function(){
-			console.log("game finished");
 			return game.gameState.call();
 		}).then(function(state){
-			console.log("state     :" + state.toNumber());
-			assert.equal(state.toNumber(), 3, "game state is finished");
-		});;
+			assert.equal(state.toNumber(), 2, "game state is finished");
+			return game.setGameRules(rulesFlat);
+		}).then(function(){
+			console.log("game rules compiled");
+			return game.setGameStats(sportsmanFlat);
+		}).then(function(){
+			console.log("game stats compiled");
+			return game.calculatePlayersScores();
+		}).then(function(){
+			console.log("players scores calculated");
+			return game.sortPlayers();
+		}).then(function(){
+			console.log("players sorted");
+			return game.calculateWinners();
+		}).then(function(){
+			console.log("winners calculated");
+			return game.playerScoreBy.call(0);
+		}).then(function(score){
+			console.log("first score:" + score);
+			return game.playerScoreBy.call(1);
+		}).then(function(score){
+			console.log("second score:" + score);
+			return game.playerPrizeBy.call(0);
+		}).then(function(prize){
+			console.log("first prize:" + prize);
+			return game.playerPrizeBy.call(1);
+		}).then(function(prize){
+			console.log("second prize:" + prize);
+		// 	return game.updateUsersStats();
+		// }).then(function(){
+		// 	console.log("user stats updated");
+			return game.sendPrizes();
+		}).then(function(){
+			console.log("prize sent");
+		});
 	});
 });

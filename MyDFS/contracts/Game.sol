@@ -3,30 +3,11 @@ pragma solidity ^0.4.16;
 import './interface/Token.sol';
 import './interface/Stats.sol';
 import './interface/Broker.sol';
+import './GameLogic.sol';
 
 contract Game {
 
-	////
-
-	struct Player {
-		address user;
-		address beneficiary;
-		int32[] team;
-		int32 score;
-		uint32 prize;
-	}
-
-	Player[] players;
-	uint8[] activeRule;
-	mapping(int32 => int32) scores;
-	mapping(int32 => mapping (int32 => int32)) rules;
-	
-	uint8[] smallGameRules;
-	uint8[] largeGameRules;
-
-	Player tmpPlayer;
-
-	////
+	GameLogic.Data data;
 
 	enum State { TeamCreation, InProgress, Finished, Canceled }
 
@@ -48,6 +29,7 @@ contract Game {
 	modifier owned() { require(msg.sender == dispatcher); _; }
 	modifier beforeStart() { require(gameState == State.TeamCreation); _; }
 	modifier inProgress() {  require(gameState == State.InProgress); _; }
+	modifier finished() {  require(gameState == State.Finished); _; }
 
 	event ParticipantAdded(address user);
 	event PrizeFor(address user, uint256 prize);
@@ -55,26 +37,24 @@ contract Game {
 	//externals
 
 	function Game(
-		address _gameLibrary,
 		address gameTokenAddress,
 		address statsAddress,
 		address brokerAddress,
 		address serviceAddress,
 		uint32 _gameEntry,
 		uint8 _serviceFee,
-		uint8[] _smallGameRules,
-		uint8[] _largeGameRules
+		uint8[] smallGameRules,
+		uint8[] largeGameRules
 	) 
 		public 
 	{
-		smallGameRules = _smallGameRules;
-		largeGameRules = _largeGameRules;
+		data.smallGameRules = smallGameRules;
+		data.largeGameRules = largeGameRules;
         
         dispatcher = msg.sender;
 		gameState = State.TeamCreation;
 
 		gameEntry = _gameEntry;
-		gameLibrary = _gameLibrary;
 		serviceFee = _serviceFee;
 		service = serviceAddress;
 		gameToken = Token(gameTokenAddress);
@@ -91,7 +71,7 @@ contract Game {
 		owned
 	{
 		require(teamsCount[user] <= 4);
-		players.push(Player(user, address(0x0), team, 0, 0));
+		data.players.push(GameLogic.Player(user, address(0x0), team, 0, 0));
 		ParticipantAdded(user);
 		teamsCount[user]++;
 	}
@@ -106,13 +86,13 @@ contract Game {
 		owned
 	{
 		require(teamsCount[user] <= 4);
-		players.push(Player(user, beneficiary, team, 0, 0));
+		data.players.push(GameLogic.Player(user, beneficiary, team, 0, 0));
 		ParticipantAdded(user);
 		teamsCount[user]++;
 	}
 
 	function startGame() external owned {
-		if (players.length > 0){
+		if (data.players.length > 0){
 			gameState = State.InProgress;
 		} else {
 			gameState = State.Finished;
@@ -121,35 +101,104 @@ contract Game {
 
 	function cancelGame() external owned {
 		gameState = State.Canceled;
-		for (uint32 i = 0; i < players.length; i++){
-			gameToken.transfer(players[i].user, gameEntry);
+		for (uint32 i = 0; i < data.players.length; i++){
+			gameToken.transfer(data.players[i].user, gameEntry);
 		}
 	}
 
+	//call order
+	// finishGame
+	// setGameRules
+	// setGameStats
+	// calculatePlayersScores
+	// sortPlayers
+	// calculateWinners
+	// updateUsersStats
+	// sendPrizes
+
 	function finishGame(
-		int32[] sportsmenFlatData, 
-		int32[] rulesFlat
 	)
 		external
 		owned
 		inProgress
 	{
-		gameLibrary.delegatecall(bytes4(sha3("compileRules(int32[])")), rulesFlat);
-		gameLibrary.delegatecall(bytes4(sha3("compileGameStats(int32[])")), sportsmenFlatData);
-		gameLibrary.delegatecall(bytes4(sha3("calculatePlayersScores()")));
-		gameLibrary.delegatecall(bytes4(sha3("calculatePlayersScores()")));
-		gameLibrary.delegatecall(bytes4(sha3("calculateWinners(uint256)")), totalPrize());
-		gameLibrary.delegatecall(bytes4(sha3("updateUsersStats()")));
-
-	    // GameLogic.compileRules(rulesFlat);
-		// GameLogic.compileGameStats(sportsmenFlatData);
-		// GameLogic.calculatePlayersScores();
-		// GameLogic.sortPlayers();
-		// GameLogic.calculateWinners(totalPrize());
-		// GameLogic.updateUsersStats(stats, players, gameEntry);
-		sendPrizes();
-
 		gameState = State.Finished;
+	}
+
+	function setGameRules(
+		int32[] rulesFlat
+	)
+		external
+		owned
+		finished
+	{
+		GameLogic.compileRules(data, rulesFlat);
+	}
+
+	function setGameStats(
+		int32[] sportsmenFlatData
+	)
+		external
+		owned
+		finished
+	{
+		GameLogic.compileGameStats(data, sportsmenFlatData);
+	}
+
+	function calculatePlayersScores(
+	)
+		external
+		owned
+		finished
+	{
+		GameLogic.calculatePlayersScores(data);
+	}
+		
+	function sortPlayers(
+	)
+		external
+		owned
+		finished
+	{
+		GameLogic.sortPlayers(data);
+	}	
+	
+	function calculateWinners(
+	)
+		external
+		owned
+		finished
+	{
+		GameLogic.calculateWinners(data, totalPrize());
+	}
+	
+	function updateUsersStats(
+	)
+		external
+		owned
+		finished
+	{
+		GameLogic.updateUsersStats(stats, data.players, gameEntry);
+	}
+
+	function sendPrizes() external owned finished {
+		for (uint32 i = 0; i < data.players.length; i++) {
+			address player = data.players[i].user;
+			uint256 playerPrize = 0;
+			address beneficiary = data.players[i].beneficiary;
+
+			if (beneficiary > 0){
+				playerPrize = calculateUserPrize(i);
+				uint256 beneficiaryPrize = data.players[i].prize - playerPrize;
+				gameToken.transfer(beneficiary, beneficiaryPrize);
+				PrizeFor(beneficiary, beneficiaryPrize);
+			} else {
+				playerPrize = data.players[i].prize;
+			}
+			gameToken.transfer(player, playerPrize);
+			PrizeFor(player, playerPrize);
+		}
+		gameToken.transfer(service, gameToken.balanceOf(address(this)));
 	}
 
 	function teamsCountOf(
@@ -162,6 +211,28 @@ contract Game {
 		return teamsCount[user];
 	} 
 
+	function playerScoreBy(
+		uint index
+	)
+		external
+		view
+		finished
+		returns (int32)
+	{
+		return data.players[index].score;
+	}
+
+	function playerPrizeBy(
+		uint index
+	)
+		external
+		view
+		finished
+		returns (uint32)
+	{
+		return data.players[index].prize;
+	}
+
 	function totalPrize (
 	) 
 		public
@@ -171,28 +242,8 @@ contract Game {
 		return gameToken.balanceOf(address(this)) * (100 - serviceFee) / 100;
 	} 
 
-	function sendPrizes() internal {
-		for (uint32 i = 0; i < players.length; i++) {
-			address player = players[i].user;
-			uint256 playerPrize = 0;
-			address beneficiary = players[i].beneficiary;
-
-			if (beneficiary > 0){
-				playerPrize = calculateUserPrize(i);
-				uint256 beneficiaryPrize = players[i].prize - playerPrize;
-				gameToken.transfer(beneficiary, beneficiaryPrize);
-				PrizeFor(beneficiary, beneficiaryPrize);
-			} else {
-				playerPrize = players[i].prize;
-			}
-			gameToken.transfer(player, playerPrize);
-			PrizeFor(player, playerPrize);
-		}
-		gameToken.transfer(service, gameToken.balanceOf(address(this)));
-	}
-
 	function calculateUserPrize(uint i) internal view returns (uint256){
-		return broker.getUserFee(players[i].beneficiary, players[i].user) * players[i].prize / 100;
+		return broker.getUserFee(data.players[i].beneficiary, data.players[i].user) * data.players[i].prize / 100;
 	}
 
 }

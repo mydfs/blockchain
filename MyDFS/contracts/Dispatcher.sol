@@ -1,8 +1,9 @@
 pragma solidity ^0.4.16;
 
 import './interface/Token.sol';
-import './UserStats.sol';
-import './BrokerManager.sol';
+import './interface/Stats.sol';
+import './interface/Broker.sol';
+
 import './Game.sol';
 
 contract Dispatcher {
@@ -11,22 +12,36 @@ contract Dispatcher {
 	address public gameLogic;
 
 	Token public gameToken;
-	UserStats public stats;
-	BrokerManager public broker;
+	Stats public stats;
+	Broker public broker;
 
 	mapping (address => uint256) balances;
 
 	modifier owned() { require(msg.sender == service); _; }
 
 	function Dispatcher(
-		address gameTokenAddress,
-		address _gameLogic
+		address gameTokenAddress
 	) public {
 		service = msg.sender;
-		gameLogic = _gameLogic;
-		stats = new UserStats();
-		broker = new BrokerManager(gameTokenAddress, address(stats));
 		gameToken = Token(gameTokenAddress);
+	}
+
+	function setUserStats(
+		address statsAddress
+	)
+		external
+		owned
+	{
+		stats = Stats(statsAddress);
+	}
+
+	function setBroker(
+		address brokerAddress
+	) 
+		external
+		owned
+	{
+		broker = Broker(brokerAddress);
 	}
 
 	function createGame(
@@ -40,7 +55,6 @@ contract Dispatcher {
 		returns (address)
 	{
 		address game = new Game(
-			gameLogic,
 			address(gameToken),
 			address(stats),
 			address(broker),
@@ -72,15 +86,79 @@ contract Dispatcher {
 	}
 
 	function finishGame(
-		address game,
-		int32[] sportsmenFlatData, 
-		int32[] rulesFlat
+		address game
 	) 
 		external
 		owned
 	{
-		Game(game).finishGame(sportsmenFlatData, rulesFlat);
+		Game(game).finishGame();
 	}
+
+	function setGameRules(
+		address game,
+		int32[] rulesFlat
+	)
+		external
+		owned
+	{
+		Game(game).setGameRules(rulesFlat);
+	}
+
+	function setGameStats(
+		address game,
+		int32[] sportsmenFlatData
+	)
+		external
+		owned
+	{
+		Game(game).setGameStats(sportsmenFlatData);
+	}
+
+	function calculateGamePlayersScores(
+		address game
+	)
+		external
+		owned
+	{
+		Game(game).calculatePlayersScores();
+	}
+		
+	function sortGamePlayers(
+		address game
+	)
+		external
+		owned
+	{
+		Game(game).sortPlayers();
+	}	
+	
+	function calculateGameWinners(
+		address game
+	)
+		external
+		owned
+	{
+		Game(game).calculateWinners();
+	}
+	
+	function updateGameUsersStats(
+		address game
+	)
+		external
+		owned
+	{
+		Game(game).updateUsersStats();
+	}
+
+	function sendGamePrizes(
+		address game
+	)
+		external
+		owned
+	{
+		Game(game).sendPrizes();
+	}
+
 
 	function addParticipant(
 		address user,
