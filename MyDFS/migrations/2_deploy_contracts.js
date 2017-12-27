@@ -7,6 +7,7 @@ var Stats = artifacts.require("./UserStats.sol");
 
 module.exports = function(deployer) {
 	deployer.deploy(GameLib).then(function(){
+    deployer.link(GameLib, [Game, Dispatcher]);
 		return deployer.deploy(MyDFSToken).then(function(){
     		return deployer.deploy(Dispatcher, MyDFSToken.address).then(function(){
     			return deployer.deploy(Stats).then(function(){
@@ -17,5 +18,4 @@ module.exports = function(deployer) {
     		});
   		});
   	});
-  deployer.link(GameLib, Game);
 };
