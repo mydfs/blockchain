@@ -37,7 +37,7 @@ contract('Dispatcher', function(accounts){
 				one_dispatcher_balance_after = balance.toNumber();
 				assert.equal(one_dispatcher_balance_after, one_dispatcher_balance_before + depositAmount, "deposit should increase to <depositAmount>");
 				return token.balanceOf.call(account_one);
-			}).then(function(balance){
+			}).then(function(balance){	
 				one_token_balance_after = balance.toNumber();
 				assert.equal(one_token_balance_before, one_token_balance_after + depositAmount, "balance should decrease to <depositAmount>");
 			});
@@ -62,20 +62,12 @@ contract('Dispatcher', function(accounts){
 			dispatcher = instance;
 			return dispatcher.service.call();
 		}).then(function(result){
-			console.log("Service   :" + result);
-			return dispatcher.gameLogic.call();
-		}).then(function(result){
-			console.log("GameLogic :" + result);
 			return dispatcher.gameToken.call();
 		}).then(function(result){
-			console.log("GameToken :" + result);
 			return dispatcher.stats.call();
 		}).then(function(result){
-			console.log("Stats     :" + result);
 			return dispatcher.broker.call();
 		}).then(function(result){
-			console.log("Broker    :" + result);
-
 			return dispatcher.createGame.call(entry_value, service_fee_percent, small_game_prizes_percent, large_game_prizes_percent, {from : account_one});
 		}).then(function(gameAddress){
 			assert.notEqual(gameAddress, 0, "game address is not 0");

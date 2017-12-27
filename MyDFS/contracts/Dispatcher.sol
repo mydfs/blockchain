@@ -9,7 +9,6 @@ import './Game.sol';
 contract Dispatcher {
 
 	address public service;
-	address public gameLogic;
 
 	Token public gameToken;
 	Stats public stats;

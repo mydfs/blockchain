@@ -7,8 +7,8 @@ contract('Game', function(accounts){
 
 		var account_one = accounts[0];
 
-		var team_one = [1, 2, 3];
-		var team_two = [3, 4, 5];
+		var team_one = [3, 4, 5];
+		var team_two = [1, 2, 3];
 
 		var sportsmanFlat = [1, 2, 2, 1, 2, 2, 2, 6, 1, 3, 2, 2, 3, 1, 3, 2, 4, 1, 1, 2, 3, 4, 1, 4, 1, 1, 2, 2, 5, 1, 4, 1, 1, 2, 3];
 		var rulesFlat = [1, 1, 40, 1, 2, 40, 2, 1, 10, 2, 2, 80, 3, 1, 100, 3, 2, 10, 4, 1, 20, 4, 2, 80];
@@ -45,37 +45,20 @@ contract('Game', function(accounts){
 			assert.equal(state.toNumber(), 2, "game state is finished");
 			return game.setGameRules(rulesFlat);
 		}).then(function(){
-			console.log("game rules compiled");
 			return game.setGameStats(sportsmanFlat);
 		}).then(function(){
-			console.log("game stats compiled");
 			return game.calculatePlayersScores();
 		}).then(function(){
-			console.log("players scores calculated");
 			return game.sortPlayers();
 		}).then(function(){
-			console.log("players sorted");
 			return game.calculateWinners();
 		}).then(function(){
-			console.log("winners calculated");
 			return game.playerScoreBy.call(0);
 		}).then(function(score){
-			console.log("first score:" + score);
+			assert.equal(score.valueOf(), 650, "team [1,2,3] has 650 scores")
 			return game.playerScoreBy.call(1);
 		}).then(function(score){
-			console.log("second score:" + score);
-			return game.playerPrizeBy.call(0);
-		}).then(function(prize){
-			console.log("first prize:" + prize);
-			return game.playerPrizeBy.call(1);
-		}).then(function(prize){
-			console.log("second prize:" + prize);
-		// 	return game.updateUsersStats();
-		// }).then(function(){
-		// 	console.log("user stats updated");
-			return game.sendPrizes();
-		}).then(function(){
-			console.log("prize sent");
+			assert.equal(score.valueOf(), 410, "team [3,4,5] has 410 scores")
 		});
 	});
 });
