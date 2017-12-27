@@ -48,9 +48,8 @@ contract GenericCrowdsale {
     }
 
     function withdrawFunding() external {
-        if (successed() && msg.sender == beneficiary){
-            beneficiary.transfer(this.balance);
-        }
+        require(successed() && msg.sender == beneficiary));
+        beneficiary.transfer(this.balance);
     }
 
     function getBonusOf(
