@@ -72,7 +72,7 @@ contract Game {
 		beforeStart
 		owned
 	{
-		// require(teamsCount[user] < 4);
+		require(teamsCount[user] < 4);
 		data.players.push(GameLogic.Player(user, address(0x0), team, 0, 0));
 		ParticipantAdded(user);
 		teamsCount[user]++;
@@ -87,7 +87,7 @@ contract Game {
 		beforeStart
 		owned
 	{
-		// require(teamsCount[user] < 4);
+		require(teamsCount[user] < 4);
 		data.players.push(GameLogic.Player(user, beneficiary, team, 0, 0));
 		ParticipantAdded(user);
 		teamsCount[user]++;
