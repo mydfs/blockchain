@@ -59,6 +59,8 @@ contract('Game', function(accounts){
 			return game.playerScoreBy.call(1);
 		}).then(function(score){
 			assert.equal(score.valueOf(), 410, "team [3,4,5] has 410 scores")
-		});
+		}).then(function(score){
+			return game.sendPrizes();
+		});;
 	});
 });

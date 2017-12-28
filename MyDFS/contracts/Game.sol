@@ -41,6 +41,7 @@ contract Game {
 		address statsAddress,
 		address brokerAddress,
 		address serviceAddress,
+		address balanceAddress,
 		uint32 _gameEntry,
 		uint8 _serviceFee,
 		uint8[] smallGameRules,
@@ -60,7 +61,7 @@ contract Game {
 		gameToken = Token(gameTokenAddress);
 		stats = Stats(statsAddress);
 		broker = Broker(brokerAddress);
-		balanceManager = BalanceManager(dispatcher);
+		balanceManager = BalanceManager(balanceAddress);
 		gameToken.increaseApproval(dispatcher, 2**255);
 	}
 

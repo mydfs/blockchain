@@ -3,10 +3,12 @@ pragma solidity ^0.4.16;
 import './interface/Token.sol';
 import './interface/Stats.sol';
 import './interface/Broker.sol';
+import './interface/BalanceManager.sol';
 
+import './GameLogic.sol';
 import './Game.sol';
 
-contract Dispatcher {
+contract Dispatcher is BalanceManager {
 
 	address public service;
 
@@ -17,6 +19,7 @@ contract Dispatcher {
 	mapping (address => uint256) balances;
 
 	modifier owned() { require(msg.sender == service); _; }
+	event GameCreated(address game);
 
 	function Dispatcher(
 		address gameTokenAddress
@@ -53,17 +56,19 @@ contract Dispatcher {
 		owned
 		returns (address)
 	{
-		address game = new Game(
+		Game game = new Game(
 			address(gameToken),
 			address(stats),
 			address(broker),
+			address(this),
 			service,
 			gameEntryValue,
 			serviceFeeValue,
 			smallGameWinnersPercents,
 			largeGameWinnersPercents);
-		stats.approve(game);
-		return game;
+		stats.approve(address(game));
+		GameCreated(address(game));
+		return address(game);
 	}
 
 	function startGame(
@@ -216,10 +221,9 @@ contract Dispatcher {
 	) 
 		external
 	{
-		if (balances[msg.sender] >= sum) {
-			if (gameToken.transfer(msg.sender, sum)) {
-				balances[msg.sender] -= sum;
-			}
+		require(balances[msg.sender] >= sum);
+		if (gameToken.transfer(msg.sender, sum)) {
+			balances[msg.sender] -= sum;
 		}
 	}
 
