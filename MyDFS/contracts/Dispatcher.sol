@@ -17,6 +17,7 @@ contract Dispatcher is BalanceManager {
 	Broker public broker;
 
 	mapping (address => uint256) balances;
+	mapping (uint => address) public games;
 
 	modifier owned() { require(msg.sender == service); _; }
 	event GameCreated(address game);
@@ -47,6 +48,7 @@ contract Dispatcher is BalanceManager {
 	}
 
 	function createGame(
+		uint32 id,
 		uint32 gameEntryValue,
 		uint8 serviceFeeValue,
 		uint8[] smallGameWinnersPercents,
@@ -60,15 +62,15 @@ contract Dispatcher is BalanceManager {
 			address(gameToken),
 			address(stats),
 			address(broker),
-			address(this),
 			service,
+			address(this),
 			gameEntryValue,
 			serviceFeeValue,
 			smallGameWinnersPercents,
 			largeGameWinnersPercents);
 		stats.approve(address(game));
 		GameCreated(address(game));
-		return address(game);
+		games[id] = address(game);
 	}
 
 	function startGame(
