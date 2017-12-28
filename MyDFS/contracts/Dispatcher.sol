@@ -199,6 +199,18 @@ contract Dispatcher {
 		deposit(msg.sender, sum);
 	}
 
+	function depositTo(
+		address to,
+		uint sum
+	) 
+		external 
+	{
+		require(gameToken.balanceOf(msg.sender) >= sum); 
+		if (gameToken.transferFrom(msg.sender, address(this), sum)) {
+			balances[to] += sum;
+		}	
+	}
+
 	function withdraw(
 		uint256 sum
 	) 

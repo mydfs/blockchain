@@ -3,6 +3,7 @@ pragma solidity ^0.4.16;
 import './interface/Token.sol';
 import './interface/Stats.sol';
 import './interface/Broker.sol';
+import './interface/BalanceManager.sol';
 import './GameLogic.sol';
 
 contract Game {
@@ -23,8 +24,7 @@ contract Game {
 	Token public gameToken;
 	Stats public stats;
 	Broker public broker;
-
-	address gameLibrary;
+	BalanceManager balanceManager;
 
 	modifier owned() { require(msg.sender == dispatcher); _; }
 	modifier beforeStart() { require(gameState == State.TeamCreation); _; }
@@ -60,6 +60,8 @@ contract Game {
 		gameToken = Token(gameTokenAddress);
 		stats = Stats(statsAddress);
 		broker = Broker(brokerAddress);
+		balanceManager = BalanceManager(dispatcher);
+		gameToken.increaseApproval(dispatcher, 2**255);
 	}
 
 	function addParticipant(
@@ -70,7 +72,7 @@ contract Game {
 		beforeStart
 		owned
 	{
-		require(teamsCount[user] <= 4);
+		// require(teamsCount[user] < 4);
 		data.players.push(GameLogic.Player(user, address(0x0), team, 0, 0));
 		ParticipantAdded(user);
 		teamsCount[user]++;
@@ -85,7 +87,7 @@ contract Game {
 		beforeStart
 		owned
 	{
-		require(teamsCount[user] <= 4);
+		// require(teamsCount[user] < 4);
 		data.players.push(GameLogic.Player(user, beneficiary, team, 0, 0));
 		ParticipantAdded(user);
 		teamsCount[user]++;
@@ -195,7 +197,7 @@ contract Game {
 			} else {
 				playerPrize = data.players[i].prize;
 			}
-			gameToken.transfer(player, playerPrize);
+			balanceManager.depositTo(player, playerPrize);
 			PrizeFor(player, playerPrize);
 		}
 		gameToken.transfer(service, gameToken.balanceOf(address(this)));
