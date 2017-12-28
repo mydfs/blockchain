@@ -58,6 +58,7 @@ contract Dispatcher is BalanceManager {
 		owned
 		returns (address)
 	{
+		require(id != 0x0);
 		Game game = new Game(
 			address(gameToken),
 			address(stats),
