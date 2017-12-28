@@ -84,6 +84,5 @@ contract GenericCrowdsale {
         TokenPurchase(msg.sender, amount, count, bonusCount);
     }
 
-    function checkGoals() internal { }
 	function successed() internal view returns(bool) { }
 }

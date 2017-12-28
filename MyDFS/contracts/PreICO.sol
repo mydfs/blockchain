@@ -43,6 +43,7 @@ contract PreICO is GenericCrowdsale {
     function () external payable active {
         uint amount = msg.value;
         super.buyTokens(amount);
+        checkGoals();
     }
 
     function checkGoals() internal {
