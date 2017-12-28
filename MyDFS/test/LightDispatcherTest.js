@@ -69,6 +69,7 @@ contract('Dispatcher', function(accounts){
 
 	it("game work correctly", function(){
 		var game;
+		var stats;
 
 		var account_one = accounts[0];
 
@@ -154,7 +155,19 @@ contract('Dispatcher', function(accounts){
 			return game.playerPrizeBy.call(1);
 		}).then(function(prize){
 			assert.equal(prize.valueOf(), 2, "team [3,4,5] has 2 tokens prize");
+			return dispatcher.updateGameUsersStats(game.address);
+		}).then(function(){
 			return dispatcher.sendGamePrizes(game.address);
+		}).then(function(){
+			return Stats.deployed().then(function(instance){
+				stats = instance;
+				return stats.users.call(account_one);
+			}).then(function(user){
+				assert.equal(user[0].toNumber(), 2, "user play 2 commands");
+				assert.equal(user[1].toNumber(), 2, "user has 2 winner places");
+				assert.equal(user[2].toNumber(), 6, "user win 6 tokens");
+				assert.equal(user[3].toNumber(), 10, "user pay 10 tokens");
+			})
 		})
 	});
 });

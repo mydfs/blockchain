@@ -61,6 +61,6 @@ contract('Game', function(accounts){
 			assert.equal(score.valueOf(), 410, "team [3,4,5] has 410 scores")
 		}).then(function(score){
 			return game.sendPrizes();
-		});;
+		});
 	});
 });
