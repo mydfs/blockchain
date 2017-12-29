@@ -17,7 +17,7 @@ contract PreICO is GenericCrowdsale {
     function PreICO(
         address ifSuccessfulSendTo,
         uint hardFundingGoalInEthers,
-        uint durationInMinutes,
+        uint durationInMin,
         uint szaboCostOfEachToken,
         address addressOfTokenUsedAsReward,
         uint32[] bonusesTokenAmount,
@@ -25,14 +25,14 @@ contract PreICO is GenericCrowdsale {
     ) public {
         require(ifSuccessfulSendTo != address(0)
             && hardFundingGoalInEthers > 0
-            && durationInMinutes > 0
+            && durationInMin > 0
             && szaboCostOfEachToken > 0
             && addressOfTokenUsedAsReward != address(0)
             && bonusesTokenAmount.length == bonusesValues.length);
         admin = msg.sender;
         beneficiary = ifSuccessfulSendTo;
         hardFundingGoal = hardFundingGoalInEthers * 1 ether;
-        deadline = now + durationInMinutes * 1 minutes;
+        deadline = now + durationInMin * 1 seconds;
         price = szaboCostOfEachToken * 1 szabo;
         tokenReward = Token(addressOfTokenUsedAsReward);
         for (uint256 i = 0; i < bonusesTokenAmount.length; i++){

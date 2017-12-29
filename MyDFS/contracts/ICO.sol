@@ -33,7 +33,7 @@ contract ICO is GenericCrowdsale {
         address ifSuccessfulSendTo,
         uint softFundingGoalInEthers,
         uint hardFundingGoalInEthers,
-        uint durationInMinutes,
+        uint durationInSeconds,
         uint szaboCostOfEachToken,
         address addressOfTokenUsedAsReward,
         uint32[] bonusesTokenAmount,
@@ -43,7 +43,7 @@ contract ICO is GenericCrowdsale {
             && softFundingGoalInEthers > 0
             && hardFundingGoalInEthers > 0
             && hardFundingGoalInEthers > softFundingGoalInEthers
-            && durationInMinutes > 0
+            && durationInSeconds > 0
             && szaboCostOfEachToken > 0
             && addressOfTokenUsedAsReward != address(0)
             && bonusesTokenAmount.length == bonusesValues.length);
@@ -51,7 +51,7 @@ contract ICO is GenericCrowdsale {
         beneficiary = ifSuccessfulSendTo;
         softFundingGoal = softFundingGoalInEthers * 1 ether;
         hardFundingGoal = hardFundingGoalInEthers * 1 ether;
-        deadline = now + durationInMinutes * 1 minutes;
+        deadline = now + durationInSeconds * 1 seconds;
         price = szaboCostOfEachToken * 1 szabo;
         tokenReward = Token(addressOfTokenUsedAsReward);
         for (uint256 i = 0; i < bonusesTokenAmount.length; i++){
