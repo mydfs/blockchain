@@ -7,7 +7,7 @@ contract('ICO', function(accounts){
   		return new Promise(resolve => setTimeout(resolve, ms));
 	}
 
-	/*it("iCO create should fail", async function(){
+	it("iCO create should fail", async function(){
 		var token = await MyDFSToken.new();
 		try{
 			await ICO.new(token.address, 1000, 100, 60, 1e6, token.address, [1, 10, 100], [5, 10, 15]);
@@ -146,10 +146,10 @@ contract('ICO', function(accounts){
 		}  catch(error) {
             assert.ok(true);
         }
-	});*/
+	});
 
 	it("iCO withdraw works correctly", async function(){
-		const start_balance = web3.eth.getBalance(accounts[0]).toNumber();
+		//const start_balance = web3.eth.getBalance(accounts[0]).toNumber();
 		const sum = 2;
 
 		const token = await MyDFSToken.new({from: accounts[0]});
@@ -165,9 +165,10 @@ contract('ICO', function(accounts){
 		});
 		
 		await sleep(5000);
+		const start_balance = web3.eth.getBalance(accounts[0]).toNumber();
 		await instance.withdrawFunding({from: accounts[0]});
-		//const after_balance = web3.eth.getBalance(accounts[0]).toNumber();
-		//assert.equal(sum, after_balance - start_balance);
+		const after_balance = web3.eth.getBalance(accounts[0]).toNumber();
+		assert.ok(after_balance != start_balance);
 	});
 });
 
