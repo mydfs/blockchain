@@ -56,8 +56,10 @@ contract('ICO', function(accounts){
 
 	it("iCO bonuses", async function(){
 		var token = await MyDFSToken.new({from: accounts[0]});
-		var instance = await ICO.new(token.address, 1000, 10000, 60, 1e9, token.address, [1, 10, 100], [5, 10, 15]);
+		var instance = await ICO.new(token.address, 1000, 10000, 60, 1e6, token.address, [1, 10, 100], [5, 10, 15]);
 		
+		await token.transfer(instance.address, 11500, {from : accounts[0]});
+
 		var investor = accounts[1];
 		const initialBalance = web3.eth.getBalance(investor).toNumber();
 		console.log(initialBalance);
@@ -65,14 +67,14 @@ contract('ICO', function(accounts){
 		await web3.eth.sendTransaction({
 		    from: investor,
 		    to: instance.address,
-		    value: web3.toWei(1)
+		    value: web3.toWei(1),
+		    gas: 3000000
 		});
 		const boughtTokens = await token.balanceOf(investor);
 		console.log(boughtTokens.toNumber());
 		const balance = web3.eth.getBalance(investor).toNumber();
 		console.log(balance);
-
-		assert.equal(boughtTokens.toNumber(), 10000);
+		assert.equal(boughtTokens.toNumber(), 2);
 	});
 
 	/*it("iCO refund works if soft goal not reached", async function(){
