@@ -68,7 +68,7 @@ contract('ICO', function(accounts){
 		    from: investor,
 		    to: instance.address,
 		    value: web3.toWei(1),
-		    gas: 3000000
+		    gas: 150000
 		});
 		const boughtTokens = await token.balanceOf(investor);
 		console.log(boughtTokens.toNumber());
