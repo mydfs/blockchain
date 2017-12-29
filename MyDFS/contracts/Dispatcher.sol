@@ -176,7 +176,9 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		owned
 	{
 		Game gameInstance = Game(game);
-		require(balanceOf(user) >= gameInstance.gameEntry() && gameToken.transfer(game, gameInstance.gameEntry()));
+		uint gameEntry = gameInstance.gameEntry();
+		require(balanceOf(user) >= gameEntry && gameToken.transfer(game, gameEntry));
+		balances[user] -= gameEntry;
 		gameInstance.addParticipant(user, team);
 	}
 
