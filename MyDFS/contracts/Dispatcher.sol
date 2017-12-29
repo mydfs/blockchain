@@ -93,6 +93,16 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		Game(game).cancelGame();
 	}
 
+	//calls order
+	//finishGame
+	//setGameRules
+	//setGameStats
+	//calculateGamePlayersScores
+	//sortGamePlayers
+	//calculateGameWinners
+	//updateGameUsersStats
+	//sendGamePrizes
+
 	function finishGame(
 		address game
 	) 
