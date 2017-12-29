@@ -4,11 +4,11 @@ import './interface/Token.sol';
 import './interface/Stats.sol';
 import './interface/Broker.sol';
 import './interface/BalanceManager.sol';
-
+import './interface/ERC223ReceivingContract.sol';
 import './GameLogic.sol';
 import './Game.sol';
 
-contract Dispatcher is BalanceManager {
+contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 
 	address public service;
 
@@ -195,8 +195,8 @@ contract Dispatcher is BalanceManager {
 		gameInstance.addSponsoredParticipant(user, team, beneficiary);
 	}
 
-	function tokenFallback(address from, uint value, bytes data) public {
-		deposit(from, value);
+	function tokenFallback(address from, uint value) public {
+		balances[from] += value;
 	}
 
 	function deposit(
@@ -204,7 +204,10 @@ contract Dispatcher is BalanceManager {
 	) 
 		external 
 	{
-		deposit(msg.sender, sum);
+		require(gameToken.balanceOf(msg.sender) >= sum); 
+		if (gameToken.transferFrom(msg.sender, address(this), sum)) {
+			balances[msg.sender] += sum;
+		}
 	}
 
 	function depositTo(
@@ -239,12 +242,5 @@ contract Dispatcher is BalanceManager {
 	{
 		return balances[user];
 	} 
-
-	function deposit(address from, uint sum) internal {
-		require(gameToken.balanceOf(from) >= sum); 
-		if (gameToken.transferFrom(from, address(this), sum)) {
-			balances[msg.sender] += sum;
-		}	
-	}
 
 }

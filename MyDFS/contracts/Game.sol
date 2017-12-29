@@ -4,9 +4,10 @@ import './interface/Token.sol';
 import './interface/Stats.sol';
 import './interface/Broker.sol';
 import './interface/BalanceManager.sol';
+import './interface/ERC223ReceivingContract.sol';
 import './GameLogic.sol';
 
-contract Game {
+contract Game is ERC223ReceivingContract{
 
 	GameLogic.Data data;
 
@@ -73,7 +74,7 @@ contract Game {
 		beforeStart
 		owned
 	{
-		require(teamsCount[user] < 4);
+		// require(teamsCount[user] < 4);
 		data.players.push(GameLogic.Player(user, address(0x0), team, 0, 0));
 		ParticipantAdded(user);
 		teamsCount[user]++;
@@ -88,7 +89,7 @@ contract Game {
 		beforeStart
 		owned
 	{
-		require(teamsCount[user] < 4);
+		// require(teamsCount[user] < 4);
 		data.players.push(GameLogic.Player(user, beneficiary, team, 0, 0));
 		ParticipantAdded(user);
 		teamsCount[user]++;
@@ -247,6 +248,9 @@ contract Game {
 
 	function calculateUserPrize(uint i) internal view returns (uint256){
 		return broker.getUserFee(data.players[i].beneficiary, data.players[i].user) * data.players[i].prize / 100;
+	}
+
+	function tokenFallback(address from, uint value) public {
 	}
 
 }

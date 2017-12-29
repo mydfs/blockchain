@@ -46,6 +46,40 @@ contract('Dispatcher', function(accounts){
 
 		return MyDFSToken.deployed().then(function(instance){
 			token = instance;
+			return token.balanceOf.call(account_one);
+		}).then(function(balance){
+			one_token_balance_before = balance.toNumber();
+			return dispatcher.balanceOf.call(account_one);
+		}).then(function(balance){
+			one_dispatcher_balance_before = balance.toNumber();
+			return token.transfer(dispatcher.address, depositAmount, {from: account_one});
+		}).then(function(){
+			return dispatcher.balanceOf.call(account_one);
+		}).then(function(balance){
+			one_dispatcher_balance_after = balance.toNumber();
+			assert.equal(one_dispatcher_balance_after, one_dispatcher_balance_before + depositAmount, "deposit should increase to <depositAmount>");
+			return token.balanceOf.call(account_one);
+		}).then(function(balance){	
+			one_token_balance_after = balance.toNumber();
+			assert.equal(one_token_balance_after, one_token_balance_before - depositAmount, "balance should decrease to <depositAmount>");
+		});
+	});
+
+	it("deposit work correctly", function(){
+		var token;
+
+		var account_one = accounts[0];
+
+		var one_token_balance_before;
+		var one_token_balance_after;
+
+		var one_dispatcher_balance_before;
+		var one_dispatcher_balance_after;
+
+		var depositAmount = 1000;
+
+		return MyDFSToken.deployed().then(function(instance){
+			token = instance;
 			return token.increaseApproval(dispatcher.address, 100000, {from: account_one});
 		}).then(function(){
 			return token.balanceOf.call(account_one);
@@ -63,7 +97,7 @@ contract('Dispatcher', function(accounts){
 			return token.balanceOf.call(account_one);
 		}).then(function(balance){	
 			one_token_balance_after = balance.toNumber();
-			assert.equal(one_token_balance_before, one_token_balance_after + depositAmount, "balance should decrease to <depositAmount>");
+			assert.equal(one_token_balance_after, one_token_balance_before - depositAmount, "balance should decrease to <depositAmount>");
 		});
 	});
 
