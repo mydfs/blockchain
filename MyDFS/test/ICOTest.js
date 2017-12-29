@@ -54,53 +54,76 @@ contract('ICO', function(accounts){
         }
 	});
 
-	it("iCO bonuses", async function(){
+	/*it("iCO bonuses", async function(){
 		var token = await MyDFSToken.new({from: accounts[0]});
 		var instance = await ICO.new(token.address, 1000, 10000, 60, 1e6, token.address, [1, 10, 100], [5, 10, 15]);
-		
 		await token.transfer(instance.address, 11500, {from : accounts[0]});
 
 		var investor = accounts[1];
 		const initialBalance = web3.eth.getBalance(investor).toNumber();
-		console.log(initialBalance);
 
 		await web3.eth.sendTransaction({
 		    from: investor,
 		    to: instance.address,
-		    value: web3.toWei(1),
-		    gas: 3000000
+		    value: web3.toWei(10),
+		    gas: 100000
 		});
 		const boughtTokens = await token.balanceOf(investor);
-		console.log(boughtTokens.toNumber());
 		const balance = web3.eth.getBalance(investor).toNumber();
-		console.log(balance);
-		assert.equal(boughtTokens.toNumber(), 2);
+		assert.equal(boughtTokens.toNumber(), 11);
 	});
 
-	/*it("iCO refund works if soft goal not reached", async function(){
+	it("iCO bonuses again", async function(){
 		var token = await MyDFSToken.new({from: accounts[0]});
-		var instance = await ICO.new(token.address, 10, 1000, 2, 1e9, token.address, [1, 10, 100], [5, 10, 15]);
-		
+		var instance = await ICO.new(token.address, 1000, 10000, 60, 1e6, token.address, [1, 5, 10], [5, 10, 20]);
+		await token.transfer(instance.address, 11500, {from : accounts[0]});
+
 		var investor = accounts[1];
-		const before_balance = web3.eth.getBalance(investor).toNumber();
+		const initialBalance = web3.eth.getBalance(investor).toNumber();
+
 		await web3.eth.sendTransaction({
 		    from: investor,
 		    to: instance.address,
-		    value: web3.toWei(9)
+		    value: web3.toWei(10),
+		    gas: 100000
 		});
-		this.slow(2000);
-		try{
-			await instance.withdrawFunding({from: accounts[0]});
-			assert.fail("withdraw Funding should throw error");
-		}  catch(error) {
-            assert.ok(true);
-        }
-		await instance.claimRefund({from: investor});
+		const boughtTokens = await token.balanceOf(investor);
 		const balance = web3.eth.getBalance(investor).toNumber();
-		assert.equal(balance, before_balance);
+		assert.equal(boughtTokens.toNumber(), 12);
+	});*/
+
+	it("iCO refund works if soft goal not reached", async function(done) {
+		const token = await MyDFSToken.new({from: accounts[0]});
+		const instance = await ICO.new(token.address, 1000, 10000, 60, 1e6, token.address, [1, 10, 100], [5, 10, 15]);
+		await token.transfer(instance.address, 11500, {from : accounts[0]});
+
+		const investor = accounts[1];
+		const initialBalance = web3.eth.getBalance(investor).toNumber();
+
+		await web3.eth.sendTransaction({
+		    from: investor,
+		    to: instance.address,
+		    value: web3.toWei(0.1),
+		    gas: 1000000
+		});
+
+		setTimeout(function () {
+			try{
+			 	await instance.withdrawFunding({from: accounts[0]});
+				assert.fail("withdraw Funding should throw error");
+			}  catch(error) {
+	            assert.ok(true);
+	        }
+
+			await instance.claimRefund({from: investor});
+			const balance = web3.eth.getBalance(investor).toNumber();
+			assert.equal(balance, before_balance);
+
+			done();
+		}, 3000);
 	});
 
-	it("iCO refund NOT works if soft goal reached", async function(){
+	/*it("iCO refund NOT works if soft goal reached", async function(){
 		var token = await MyDFSToken.new({from: accounts[0]});
 		var instance = await ICO.new(token.address, 10, 1000, 2, 1e9, token.address, [1, 10, 100], [5, 10, 15]);
 		
