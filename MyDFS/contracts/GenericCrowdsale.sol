@@ -48,9 +48,8 @@ contract GenericCrowdsale {
     }
 
     function withdrawFunding() external {
-        if (successed() && msg.sender == beneficiary){
-            beneficiary.transfer(this.balance);
-        }
+        require(successed() && msg.sender == beneficiary);
+        beneficiary.transfer(this.balance);
     }
 
     function getBonusOf(
@@ -85,6 +84,5 @@ contract GenericCrowdsale {
         TokenPurchase(msg.sender, amount, count, bonusCount);
     }
 
-    function checkGoals() internal { }
 	function successed() internal view returns(bool) { }
 }

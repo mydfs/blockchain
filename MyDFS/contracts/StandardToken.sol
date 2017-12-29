@@ -1,6 +1,7 @@
 pragma solidity ^0.4.16;
 
 import "./interface/Token.sol";
+import "./interface/ERC223ReceivingContract.sol";
 
 contract StandardToken is Token {
 
@@ -19,9 +20,17 @@ contract StandardToken is Token {
         external 
         returns (bool) 
     {
+        uint codeLength;
+        assembly {
+            codeLength := extcodesize(to)
+        }
         if (balances[msg.sender] >= value && value > 0) {
             balances[msg.sender] -= value;
             balances[to] += value;
+            if (codeLength > 0) {
+                ERC223ReceivingContract receiver = ERC223ReceivingContract(to);
+                receiver.tokenFallback(msg.sender, value);
+            }
             Transfer(msg.sender, to, value);
             return true;
         } else { return false; }
@@ -36,10 +45,18 @@ contract StandardToken is Token {
         external 
         returns (bool)
     {
+        uint codeLength;
+        assembly {
+            codeLength := extcodesize(to)
+        }
         if (balances[from] >= value && allowed[from][msg.sender] >= value && value > 0) {
             balances[to] += value;
             balances[from] -= value;
             allowed[from][msg.sender] -= value;
+            if (codeLength > 0) {
+                ERC223ReceivingContract receiver = ERC223ReceivingContract(to);
+                receiver.tokenFallback(msg.sender, value);
+            }
             Transfer(from, to, value);
             return true;
         } else { return false; }

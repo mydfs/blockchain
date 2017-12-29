@@ -20,8 +20,6 @@ contract BrokerManager is Broker {
 	Token token;
 	Stats stats;
 
-	//сделать map => user -> broker
-
 	function BrokerManager (
 		address tokenAddress,
 		address statsAddress
@@ -40,7 +38,7 @@ contract BrokerManager is Broker {
 	{
 		require(allowed[msg.sender][user].amount == 0);
 		allowed[msg.sender][user] = Term(tokensAmount, stats.getFeePercent(user));
-		userBrokers[user][msg.sender] = Term(tokensAmount, stats.getFeePercent(user));
+		userBrokers[user][msg.sender] = allowed[msg.sender][user];
 	}
 
 	function fire(address user) external {

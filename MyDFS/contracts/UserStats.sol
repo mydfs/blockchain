@@ -5,7 +5,7 @@ import './interface/Stats.sol';
 contract UserStats is Stats {
 
 	struct User {
-		uint256 gamesCount;
+		uint256 commandsCount;
 		uint256 wins;
 		uint256 totalPrizeSum;
 		uint256 totalLoseSum;
@@ -20,8 +20,8 @@ contract UserStats is Stats {
 	modifier allowed() { require(gameAddresses[msg.sender]); _; }
 	modifier owned() { require(msg.sender == owner); _; }
 
-	function UserStats() public {
-		owner = msg.sender;
+	function UserStats(address _owner) public {
+		owner = _owner;
 	}
 
 	function approve(
@@ -42,7 +42,7 @@ contract UserStats is Stats {
 		external
 		allowed
 	{
-		users[user].gamesCount++;
+		users[user].commandsCount++;
 		if (win){
 			users[user].wins++;
 		}
