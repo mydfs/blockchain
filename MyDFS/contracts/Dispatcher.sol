@@ -25,6 +25,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	function Dispatcher(
 		address gameTokenAddress
 	) public {
+		require(gameTokenAddress > 0);
 		service = msg.sender;
 		gameToken = Token(gameTokenAddress);
 	}
@@ -91,6 +92,16 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	{
 		Game(game).cancelGame();
 	}
+
+	//calls order
+	//finishGame
+	//setGameRules
+	//setGameStats
+	//calculateGamePlayersScores
+	//sortGamePlayers
+	//calculateGameWinners
+	//updateGameUsersStats
+	//sendGamePrizes
 
 	function finishGame(
 		address game
