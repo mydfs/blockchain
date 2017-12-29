@@ -2,6 +2,11 @@ var ICO = artifacts.require("ICO");
 var MyDFSToken = artifacts.require("MyDFSToken");
 
 contract('ICO', function(accounts){
+
+	function sleep(ms) {
+  		return new Promise(resolve => setTimeout(resolve, ms));
+	}
+
 	it("iCO create should fail", async function(){
 		var token = await MyDFSToken.new();
 		try{
@@ -94,7 +99,7 @@ contract('ICO', function(accounts){
 
 	it("iCO refund works if soft goal not reached", async function(done) {
 		const token = await MyDFSToken.new({from: accounts[0]});
-		const instance = await ICO.new(token.address, 1000, 10000, 60, 1e6, token.address, [1, 10, 100], [5, 10, 15]);
+		const instance = await ICO.new(token.address, 1000, 10000, 1, 1e6, token.address, [1, 10, 100], [5, 10, 15]);
 		await token.transfer(instance.address, 11500, {from : accounts[0]});
 
 		const investor = accounts[1];
@@ -107,20 +112,18 @@ contract('ICO', function(accounts){
 		    gas: 1000000
 		});
 
-		setTimeout(function () {
-			try{
-			 	await instance.withdrawFunding({from: accounts[0]});
-				assert.fail("withdraw Funding should throw error");
-			}  catch(error) {
-	            assert.ok(true);
-	        }
+		await sleep(61000);
+		console.log(111);
+		try{
+			await instance.withdrawFunding({from: accounts[0]});
+			assert.fail("withdraw Funding should throw error");
+		} catch(error) {
+	        assert.ok(true);
+	    }
 
-			await instance.claimRefund({from: investor});
-			const balance = web3.eth.getBalance(investor).toNumber();
-			assert.equal(balance, before_balance);
-
-			done();
-		}, 3000);
+		await instance.claimRefund({from: investor});
+		const balance = web3.eth.getBalance(investor).toNumber();
+		assert.equal(balance, initialBalance);
 	});
 
 	/*it("iCO refund NOT works if soft goal reached", async function(){
