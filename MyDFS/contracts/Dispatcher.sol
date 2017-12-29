@@ -5,7 +5,6 @@ import './interface/Stats.sol';
 import './interface/Broker.sol';
 import './interface/BalanceManager.sol';
 import './interface/ERC223ReceivingContract.sol';
-import './GameLogic.sol';
 import './Game.sol';
 
 contract Dispatcher is BalanceManager, ERC223ReceivingContract {
@@ -21,6 +20,8 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 
 	modifier owned() { require(msg.sender == service); _; }
 	event GameCreated(address game);
+	event Deposit(address user, uint sum);
+	event Withdraw(address user, uint sum);
 
 	function Dispatcher(
 		address gameTokenAddress
@@ -51,9 +52,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	function createGame(
 		uint32 id,
 		uint32 gameEntryValue,
-		uint8 serviceFeeValue,
-		uint8[] smallGameWinnersPercents,
-		uint8[] largeGameWinnersPercents
+		uint8 serviceFeeValue
 	)
 		external
 		owned
@@ -67,9 +66,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 			service,
 			address(this),
 			gameEntryValue,
-			serviceFeeValue,
-			smallGameWinnersPercents,
-			largeGameWinnersPercents);
+			serviceFeeValue);
 		stats.approve(address(game));
 		GameCreated(address(game));
 		games[id] = address(game);
@@ -93,16 +90,6 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		Game(game).cancelGame();
 	}
 
-	//calls order
-	//finishGame
-	//setGameRules
-	//setGameStats
-	//calculateGamePlayersScores
-	//sortGamePlayers
-	//calculateGameWinners
-	//updateGameUsersStats
-	//sendGamePrizes
-
 	function finishGame(
 		address game
 	) 
@@ -112,75 +99,29 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		Game(game).finishGame();
 	}
 
-	function setGameRules(
-		address game,
-		int32[] rulesFlat
-	)
-		external
-		owned
-	{
-		Game(game).setGameRules(rulesFlat);
-	}
-
-	function setGameStats(
-		address game,
-		int32[] sportsmenFlatData
-	)
-		external
-		owned
-	{
-		Game(game).setGameStats(sportsmenFlatData);
-	}
-
-	function calculateGamePlayersScores(
-		address game
-	)
-		external
-		owned
-	{
-		Game(game).calculatePlayersScores();
-	}
-		
-	function sortGamePlayers(
-		address game
-	)
-		external
-		owned
-	{
-		Game(game).sortPlayers();
-	}	
-	
-	function calculateGameWinners(
-		address game
-	)
-		external
-		owned
-	{
-		Game(game).calculateWinners();
-	}
-	
-	function updateGameUsersStats(
-		address game
-	)
-		external
-		owned
-	{
-		Game(game).updateUsersStats();
-	}
-
 	function sendGamePrizes(
-		address game
+		address game,
+		uint[] winners
 	)
 		external
 		owned
 	{
-		Game(game).sendPrizes();
+		Game(game).sendPrizes(winners);
 	}
 
+	//uncomment this is sendGamePrize erase out of gas
+	// function getGameFee(
+	// 	address game
+	// )
+	// 	external
+	// 	owned
+	// {
+	// 	Game(game).getGameFee();
+	// } 
 
 	function addParticipant(
 		address user,
-		int32[] team, 
+		uint32 teamId, 
 		address game
 	)
 		external
@@ -190,12 +131,12 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		uint gameEntry = gameInstance.gameEntry();
 		require(balanceOf(user) >= gameEntry && gameToken.transfer(game, gameEntry));
 		balances[user] -= gameEntry;
-		gameInstance.addParticipant(user, team);
+		gameInstance.addParticipant(user, teamId);
 	}
 
 	function addSponsoredParticipant(
 		address user,
-		int32[] team, 
+		uint32 teamId, 
 		address game,
 		address beneficiary
 	)
@@ -205,11 +146,12 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		Game gameInstance = Game(game);
 		require(broker.allowance(beneficiary, user) >= gameInstance.gameEntry()
 			&& gameToken.transferFrom(beneficiary, game, gameInstance.gameEntry()));
-		gameInstance.addSponsoredParticipant(user, team, beneficiary);
+		gameInstance.addSponsoredParticipant(user, teamId, beneficiary);
 	}
 
 	function tokenFallback(address from, uint value) public {
 		balances[from] += value;
+		Deposit(from, value);
 	}
 
 	function deposit(
@@ -220,6 +162,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		require(gameToken.balanceOf(msg.sender) >= sum); 
 		if (gameToken.transferFrom(msg.sender, address(this), sum)) {
 			balances[msg.sender] += sum;
+			Deposit(msg.sender, sum);
 		}
 	}
 
@@ -232,6 +175,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		require(gameToken.balanceOf(msg.sender) >= sum); 
 		if (gameToken.transferFrom(msg.sender, address(this), sum)) {
 			balances[to] += sum;
+			Deposit(msg.sender, sum);
 		}	
 	}
 
@@ -243,6 +187,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		require(balances[msg.sender] >= sum);
 		if (gameToken.transfer(msg.sender, sum)) {
 			balances[msg.sender] -= sum;
+			Withdraw(msg.sender, sum);
 		}
 	}
 

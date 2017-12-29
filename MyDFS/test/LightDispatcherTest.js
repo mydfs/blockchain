@@ -139,27 +139,24 @@ contract('Dispatcher', function(accounts){
 		var gameId = 1;
 		var entry_value = 5;
 		var service_fee_percent = 20;
-		var small_game_prizes_percent = [50, 30, 20];
-		var large_game_prizes_percent = [40, 30, 20, 10];
 
 		var one_balance_before; 
 
-		var team_one = [1, 2, 3];
-		var team_two = [3, 4, 5];
+		var team_one = 1;
+		var team_two = 2;
 
-		var team_one_prize;
-		var team_two_prize;
+		var team_one_prize = 4;
+		var team_two_prize = 2;
 
 		var beneficiary_balance_before;
 
-		var sportsmanFlat = [1, 2, 2, 1, 2, 2, 2, 6, 1, 3, 2, 2, 3, 1, 3, 2, 4, 1, 1, 2, 3, 4, 1, 4, 1, 1, 2, 2, 5, 1, 4, 1, 1, 2, 3];
-		var rulesFlat = [1, 1, 40, 1, 2, 40, 2, 1, 10, 2, 2, 80, 3, 1, 100, 3, 2, 10, 4, 1, 20, 4, 2, 80];
+		var winners = [1, team_one_prize, 2, team_two_prize];
 
 		return Dispatcher.deployed().then(function(instance){
 			dispatcher = instance;
 			return dispatcher.service.call();
 		}).then(function(result){
-			return dispatcher.createGame(gameId, entry_value, service_fee_percent, small_game_prizes_percent, large_game_prizes_percent, {from : account_one});;
+			return dispatcher.createGame(gameId, entry_value, service_fee_percent, {from : account_one});;
 		}).then(function(){
 			return dispatcher.games.call(gameId);
 		}).then(function(gameAddress){
@@ -211,33 +208,8 @@ contract('Dispatcher', function(accounts){
 			return game.gameState.call();
 		}).then(function(state){
 			assert.equal(state.toNumber(), 2, "game state is finished");
-			return dispatcher.setGameRules(game.address, rulesFlat);
 		}).then(function(){
-			return dispatcher.setGameStats(game.address, sportsmanFlat);
-		}).then(function(){
-			return dispatcher.calculateGamePlayersScores(game.address);
-		}).then(function(){
-			return dispatcher.sortGamePlayers(game.address);
-		}).then(function(){
-			return dispatcher.calculateGameWinners(game.address);
-		}).then(function(){
-			return game.playerScoreBy.call(0);
-		}).then(function(score){
-			assert.equal(score.valueOf(), 650, "team [1,2,3] has 650 scores");
-			return game.playerScoreBy.call(1);
-		}).then(function(score){
-			assert.equal(score.valueOf(), 410, "team [3,4,5] has 410 scores");
-			return game.playerPrizeBy.call(0);
-		}).then(function(prize){
-			team_one_prize = prize.toNumber();
-			assert.equal(team_one_prize, 4, "team [1,2,3] has 4 tokens prize");
-			return game.playerPrizeBy.call(1);
-		}).then(function(prize){
-			team_two_prize = prize.toNumber();
-			assert.equal(team_two_prize, 2, "team [3,4,5] has 2 tokens prize");
-			return dispatcher.updateGameUsersStats(game.address);
-		}).then(function(){
-			return dispatcher.sendGamePrizes(game.address);
+			return dispatcher.sendGamePrizes(game.address, winners);
 		}).then(function(){
 			return dispatcher.balanceOf.call(account_one);
 		}).then(function(balance){

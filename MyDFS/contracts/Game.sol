@@ -5,20 +5,24 @@ import './interface/Stats.sol';
 import './interface/Broker.sol';
 import './interface/BalanceManager.sol';
 import './interface/ERC223ReceivingContract.sol';
-import './GameLogic.sol';
 
 contract Game is ERC223ReceivingContract{
 
-	GameLogic.Data data;
-
 	enum State { TeamCreation, InProgress, Finished, Canceled }
+
+	struct Player {
+		address user;
+		address beneficiary;
+	}
 
 	State public gameState;
 
 	uint32 public gameEntry;
 	uint8 public serviceFee;
 
+	mapping (uint32 => Player) players;
 	mapping (address => uint8) teamsCount; 
+	Player[] rawPlayers;
 
 	address public dispatcher;
 	address public service;
@@ -44,15 +48,10 @@ contract Game is ERC223ReceivingContract{
 		address serviceAddress,
 		address balanceAddress,
 		uint32 _gameEntry,
-		uint8 _serviceFee,
-		uint8[] smallGameRules,
-		uint8[] largeGameRules
+		uint8 _serviceFee
 	) 
 		public 
 	{
-		data.smallGameRules = smallGameRules;
-		data.largeGameRules = largeGameRules;
-        
         dispatcher = msg.sender;
 		gameState = State.TeamCreation;
 
@@ -68,35 +67,37 @@ contract Game is ERC223ReceivingContract{
 
 	function addParticipant(
 		address user,
-		int32[] team
+		uint32 teamId
 	)
 		external
 		beforeStart
 		owned
 	{
-		// require(teamsCount[user] < 4);
-		data.players.push(GameLogic.Player(user, address(0x0), team, 0, 0));
+		require(teamsCount[user] < 4);
+		players[teamId] = Player(user, address(0x0));
+		rawPlayers.push(players[teamId]);
 		ParticipantAdded(user);
 		teamsCount[user]++;
 	}
 
 	function addSponsoredParticipant(
 		address user,
-		int32[] team,
+		uint32 teamId,
 		address beneficiary
 	)
 		external
 		beforeStart
 		owned
 	{
-		// require(teamsCount[user] < 4);
-		data.players.push(GameLogic.Player(user, beneficiary, team, 0, 0));
+		require(teamsCount[user] < 4);
+		players[teamId] = Player(user, beneficiary);
+		rawPlayers.push(players[teamId]);
 		ParticipantAdded(user);
 		teamsCount[user]++;
 	}
 
 	function startGame() external owned {
-		if (data.players.length > 0){
+		if (rawPlayers.length > 0){
 			gameState = State.InProgress;
 		} else {
 			gameState = State.Finished;
@@ -105,20 +106,10 @@ contract Game is ERC223ReceivingContract{
 
 	function cancelGame() external owned {
 		gameState = State.Canceled;
-		for (uint32 i = 0; i < data.players.length; i++){
-			gameToken.transfer(data.players[i].user, gameEntry);
+		for (uint32 i = 0; i < rawPlayers.length; i++){
+			balanceManager.depositTo(rawPlayers[i].user, gameEntry);
 		}
 	}
-
-	//call order
-	// finishGame
-	// setGameRules
-	// setGameStats
-	// calculatePlayersScores
-	// sortPlayers
-	// calculateWinners
-	// updateUsersStats
-	// sendPrizes
 
 	function finishGame(
 	)
@@ -129,81 +120,45 @@ contract Game is ERC223ReceivingContract{
 		gameState = State.Finished;
 	}
 
-	function setGameRules(
-		int32[] rulesFlat
+	function sendPrizes(
+		uint[] winners
 	)
-		external
-		owned
-		finished
-	{
-		GameLogic.compileRules(data, rulesFlat);
-	}
-
-	function setGameStats(
-		int32[] sportsmenFlatData
-	)
-		external
-		owned
-		finished
-	{
-		GameLogic.compileGameStats(data, sportsmenFlatData);
-	}
-
-	function calculatePlayersScores(
-	)
-		external
-		owned
-		finished
-	{
-		GameLogic.calculatePlayersScores(data);
-	}
-		
-	function sortPlayers(
-	)
-		external
-		owned
-		finished
-	{
-		GameLogic.sortPlayers(data);
-	}	
-	
-	function calculateWinners(
-	)
-		external
-		owned
-		finished
-	{
-		GameLogic.calculateWinners(data, totalPrize());
-	}
-	
-	function updateUsersStats(
-	)
-		external
-		owned
-		finished
-	{
-		GameLogic.updateUsersStats(stats, data.players, gameEntry);
-	}
-
-	function sendPrizes() external owned finished {
-		for (uint32 i = 0; i < data.players.length; i++) {
-			address player = data.players[i].user;
-			uint256 playerPrize = 0;
-			address beneficiary = data.players[i].beneficiary;
+ 		external
+ 		owned
+ 		finished
+ 	{
+		for (uint32 i = 0; i < winners.length; i += 2) {
+			uint32 teamId = uint32(winners[i]);
+			uint totalPlayerPrize = winners[i + 1];
+			uint playerPrize = 0;
+			address player = players[teamId].user;
+			address beneficiary = players[teamId].beneficiary;
 
 			if (beneficiary > 0){
-				playerPrize = calculateUserPrize(i);
-				uint256 beneficiaryPrize = data.players[i].prize - playerPrize;
+				playerPrize = calculateUserPrize(player, beneficiary, totalPlayerPrize);
+				uint256 beneficiaryPrize = totalPlayerPrize - playerPrize;
 				gameToken.transfer(beneficiary, beneficiaryPrize);
 				PrizeFor(beneficiary, beneficiaryPrize);
 			} else {
-				playerPrize = data.players[i].prize;
+				playerPrize = totalPlayerPrize;
 			}
 			balanceManager.depositTo(player, playerPrize);
 			PrizeFor(player, playerPrize);
+			stats.incStat(player, totalPlayerPrize > 0, gameEntry, totalPlayerPrize);
 		}
+		//comment this if sendPrizes erase out of gas and send winners partically
 		gameToken.transfer(service, gameToken.balanceOf(address(this)));
 	}
+
+	//uncomment this is sendGamePrize erase out of gas
+	// function getGameFee(
+	// )
+	// 	external
+	// 	owned
+	// 	finished
+	// {
+	// 	gameToken.transfer(service, gameToken.balanceOf(address(this)));
+	// } 
 
 	function teamsCountOf(
 		address user
@@ -215,28 +170,6 @@ contract Game is ERC223ReceivingContract{
 		return teamsCount[user];
 	} 
 
-	function playerScoreBy(
-		uint index
-	)
-		external
-		view
-		finished
-		returns (int32)
-	{
-		return data.players[index].score;
-	}
-
-	function playerPrizeBy(
-		uint index
-	)
-		external
-		view
-		finished
-		returns (uint32)
-	{
-		return data.players[index].prize;
-	}
-
 	function totalPrize (
 	) 
 		public
@@ -246,8 +179,8 @@ contract Game is ERC223ReceivingContract{
 		return gameToken.balanceOf(address(this)) * (100 - serviceFee) / 100;
 	} 
 
-	function calculateUserPrize(uint i) internal view returns (uint256){
-		return broker.getUserFee(data.players[i].beneficiary, data.players[i].user) * data.players[i].prize / 100;
+	function calculateUserPrize(address user, address beneficiary, uint totalPlayerPrize) internal view returns (uint256){
+		return broker.getUserFee(beneficiary, user) * totalPlayerPrize / 100;
 	}
 
 	function tokenFallback(address from, uint value) public {
