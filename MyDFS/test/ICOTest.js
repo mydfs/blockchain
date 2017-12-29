@@ -153,7 +153,7 @@ contract('ICO', function(accounts){
 		const sum = 2;
 
 		const token = await MyDFSToken.new({from: accounts[0]});
-		const instance = await ICO.new(token.address, 1, 10000, 3, 1e6, token.address, [1, 10, 100], [5, 10, 15]);
+		const instance = await ICO.new(accounts[0], 1, 10000, 5, 1e6, token.address, [1, 10, 100], [5, 10, 15]);
 		await token.transfer(instance.address, 11500, {from : accounts[0]});
 
 		var investor = accounts[1];
@@ -164,7 +164,7 @@ contract('ICO', function(accounts){
 		    gas: 1000000
 		});
 		
-		await sleep(3000);
+		await sleep(5000);
 		await instance.withdrawFunding({from: accounts[0]});
 		//const after_balance = web3.eth.getBalance(accounts[0]).toNumber();
 		//assert.equal(sum, after_balance - start_balance);
