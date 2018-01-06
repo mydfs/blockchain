@@ -14,7 +14,7 @@ contract StandardToken is Token {
 
     //перевод токенов с баланса msg.sender на баланс to в количесте value
     function transfer(
-        address to, 
+        address to,
         uint256 value
     )
         external 

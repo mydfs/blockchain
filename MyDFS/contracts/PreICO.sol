@@ -17,39 +17,40 @@ contract PreICO is GenericCrowdsale {
     function PreICO(
         address ifSuccessfulSendTo,
         uint hardFundingGoalInEthers,
-        uint durationInMin,
+        uint durationInSeconds,
         uint szaboCostOfEachToken,
-        address addressOfTokenUsedAsReward,
-        uint32[] bonusesTokenAmount,
-        uint16[] bonusesValues
+        address addressOfTokenUsedAsReward
     ) public {
         require(ifSuccessfulSendTo != address(0)
             && hardFundingGoalInEthers > 0
-            && durationInMin > 0
+            && durationInSeconds > 0
             && szaboCostOfEachToken > 0
-            && addressOfTokenUsedAsReward != address(0)
-            && bonusesTokenAmount.length == bonusesValues.length);
+            && addressOfTokenUsedAsReward != address(0));
         admin = msg.sender;
         beneficiary = ifSuccessfulSendTo;
         hardFundingGoal = hardFundingGoalInEthers * 1 ether;
-        deadline = now + durationInMin * 1 seconds;
+        deadline = now + durationInSeconds * 1 seconds;
         price = szaboCostOfEachToken * 1 szabo;
         tokenReward = Token(addressOfTokenUsedAsReward);
-        for (uint256 i = 0; i < bonusesTokenAmount.length; i++){
-            bonuses[i] = Bonus(bonusesTokenAmount[i], bonusesValues[i]);
-        }
     }
 
     function () external payable active {
         require(msg.value > 0);
-        super.buyTokens(msg.sender,  msg.value);
+        uint amount = msg.value;
+        if (amount > hardFundingGoal - amountRaised){
+            uint availableAmount = hardFundingGoal - amountRaised;
+            msg.sender.transfer(amount - availableAmount);
+            amount = availableAmount;
+        }
+
+        super.buyTokens(msg.sender,  amount);
         checkGoals();
     }
 
     function checkGoals() internal {
         if (amountRaised >= hardFundingGoal){
             HardGoalReached(amountRaised);
-        } 
+        }
     }
 
     function successed() internal view returns(bool) {

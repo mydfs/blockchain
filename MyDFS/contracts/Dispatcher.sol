@@ -16,7 +16,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	Stats public stats;
 	Broker public broker;
 
-	mapping (address => uint256) balances;
+	mapping (address => uint32) balances;
 	mapping (uint => address) public games;
 
 	modifier owned() { require(msg.sender == service); _; }
@@ -51,9 +51,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	function createGame(
 		uint32 id,
 		uint32 gameEntryValue,
-		uint8 serviceFeeValue,
-		uint8[] smallGameWinnersPercents,
-		uint8[] largeGameWinnersPercents
+		uint8 serviceFeeValue
 	)
 		external
 		owned
@@ -65,11 +63,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 			address(stats),
 			address(broker),
 			service,
-			address(this),
-			gameEntryValue,
-			serviceFeeValue,
-			smallGameWinnersPercents,
-			largeGameWinnersPercents);
+			address(this));
 		stats.approve(address(game));
 		GameCreated(address(game));
 		games[id] = address(game);
@@ -93,16 +87,6 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		Game(game).cancelGame();
 	}
 
-	//calls order
-	//finishGame
-	//setGameRules
-	//setGameStats
-	//calculateGamePlayersScores
-	//sortGamePlayers
-	//calculateGameWinners
-	//updateGameUsersStats
-	//sendGamePrizes
-
 	function finishGame(
 		address game
 	) 
@@ -112,100 +96,14 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		Game(game).finishGame();
 	}
 
-	function setGameRules(
-		address game,
-		int32[] rulesFlat
-	)
-		external
-		owned
-	{
-		Game(game).setGameRules(rulesFlat);
-	}
-
-	function setGameStats(
-		address game,
-		int32[] sportsmenFlatData
-	)
-		external
-		owned
-	{
-		Game(game).setGameStats(sportsmenFlatData);
-	}
-
-	function calculateGamePlayersScores(
+	function addParticipantsHash(
+		string hash,
 		address game
 	)
 		external
 		owned
 	{
-		Game(game).calculatePlayersScores();
-	}
-		
-	function sortGamePlayers(
-		address game
-	)
-		external
-		owned
-	{
-		Game(game).sortPlayers();
-	}	
-	
-	function calculateGameWinners(
-		address game
-	)
-		external
-		owned
-	{
-		Game(game).calculateWinners();
-	}
-	
-	function updateGameUsersStats(
-		address game
-	)
-		external
-		owned
-	{
-		Game(game).updateUsersStats();
-	}
-
-	function sendGamePrizes(
-		address game
-	)
-		external
-		owned
-	{
-		Game(game).sendPrizes();
-	}
-
-
-	function addParticipant(
-		address user,
-		int32[] team, 
-		address game
-	)
-		external
-		owned
-	{
-		Game gameInstance = Game(game);
-		uint gameEntry = gameInstance.gameEntry();
-		require(balanceOf(user) >= gameEntry && gameToken.transfer(game, gameEntry));
-		balances[user] -= gameEntry;
-		gameInstance.addParticipant(user, team);
-	}
-
-	function addSponsoredParticipant(
-		address user,
-		int32[] team, 
-		address game,
-		address beneficiary
-	)
-		external
-		owned
-	{
-		Game gameInstance = Game(game);
-		require(broker.allowance(beneficiary, user) >= gameInstance.gameEntry()
-			&& gameToken.transferFrom(beneficiary, game, gameInstance.gameEntry()));
-		gameInstance.addSponsoredParticipant(user, team, beneficiary);
+		Game(game).addParticipantsHash(hash);
 	}
 
 	function tokenFallback(address from, uint value) public {
@@ -237,7 +135,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 
 	function withdraw(
 		uint256 sum
-	) 
+	)
 		external
 	{
 		require(balances[msg.sender] >= sum);
@@ -254,6 +152,5 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		returns (uint256)
 	{
 		return balances[user];
-	} 
-
+	}
 }

@@ -5,11 +5,11 @@ import './interface/Stats.sol';
 contract UserStats is Stats {
 
 	struct User {
-		uint256 commandsCount;
-		uint256 wins;
-		uint256 totalPrizeSum;
-		uint256 totalLoseSum;
-		uint16 feePercent;
+		uint16 commandsCount;
+		uint16 wins;
+		uint32 totalPrizeSum;
+		uint32 totalLoseSum;
+		uint8 feePercent;
 	}
 
 	mapping(address => User) public users;
@@ -20,37 +20,53 @@ contract UserStats is Stats {
 	modifier allowed() { require(gameAddresses[msg.sender]); _; }
 	modifier owned() { require(msg.sender == owner); _; }
 
-	function UserStats(address _owner) public {
+	function UserStats(
+		address _owner
+	) 
+		public
+	{
 		owner = _owner;
 	}
 
 	function approve(
 		address gameContract
-	) 
+	)
 		external
 		owned
 	{
 		gameAddresses[gameContract] = true;
 	}
 
-	function incStat(
-		address user, 
-		bool win, 
-		uint256 entrySum, 
-		uint256 prize
+	function addPlayerWin(
+		address user,
+		uint32 entrySum,
+		uint32 prize
 	)
 		external
 		allowed
 	{
 		users[user].commandsCount++;
-		if (win){
-			users[user].wins++;
-		}
+		users[user].totalLoseSum += entrySum;
+		users[user].wins++;
 		users[user].totalPrizeSum += prize;
+	}
+
+	function addPlayerLoose(
+		address user,
+		uint32 entrySum
+	)
+		external
+		allowed
+	{
+		users[user].commandsCount++;
 		users[user].totalLoseSum += entrySum;
 	}
 
-	function changeFeePercent(uint16 amount) external {
+	function changeFeePercent(
+		uint16 amount
+	)
+		external 
+	{
 		require(amount >= 0 && amount <= 100);
 		users[msg.sender].feePercent = amount;
 	}
@@ -65,7 +81,13 @@ contract UserStats is Stats {
 		return users[user].feePercent;
 	}
 
-	function allowance(address game) external constant returns (bool) {
+	function allowance(
+		address game
+	) 
+		external
+		constant
+		returns (bool) 
+	{
 		return gameAddresses[game];
 	}
 
