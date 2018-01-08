@@ -102,7 +102,7 @@ contract Game is ERC223ReceivingContract {
 	{
 		require(prize > 0); 
 
-		winners.push(Winner(user, beneficiary, prize));
+		/* winners.push(Winner(user, beneficiary, prize));
 		if (beneficiary > 0){
 			playerPrize = calculateUserPrize(i);
 			uint256 beneficiaryPrize = prize - playerPrize;
@@ -112,7 +112,7 @@ contract Game is ERC223ReceivingContract {
 			playerPrize = prize;
 		}
 		balanceManager.depositTo(player, playerPrize);
-		PrizeFor(player, playerPrize);
+		PrizeFor(player, playerPrize); */
 	}
 
 	function trasferFee () 

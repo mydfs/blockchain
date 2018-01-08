@@ -63,7 +63,7 @@ contract UserStats is Stats {
 	}
 
 	function changeFeePercent(
-		uint16 amount
+		uint8 amount
 	)
 		external 
 	{

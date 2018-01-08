@@ -5,7 +5,6 @@ import './interface/Stats.sol';
 import './interface/Broker.sol';
 import './interface/BalanceManager.sol';
 import './interface/ERC223ReceivingContract.sol';
-import './GameLogic.sol';
 import './Game.sol';
 
 contract Dispatcher is BalanceManager, ERC223ReceivingContract {
@@ -63,7 +62,9 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 			address(stats),
 			address(broker),
 			service,
-			address(this));
+			address(this),
+			gameEntryValue,
+			serviceFeeValue);
 		stats.approve(address(game));
 		GameCreated(address(game));
 		games[id] = address(game);
@@ -107,11 +108,11 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	}
 
 	function tokenFallback(address from, uint value) public {
-		balances[from] += value;
+		balances[from] += uint32(value);
 	}
 
 	function deposit(
-		uint sum
+		uint32 sum
 	) 
 		external 
 	{
@@ -123,7 +124,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 
 	function depositTo(
 		address to,
-		uint sum
+		uint32 sum
 	) 
 		external 
 	{
@@ -134,7 +135,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	}
 
 	function withdraw(
-		uint256 sum
+		uint32 sum
 	)
 		external
 	{
@@ -149,7 +150,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	)
 		public
 		constant
-		returns (uint256)
+		returns (uint32)
 	{
 		return balances[user];
 	}
