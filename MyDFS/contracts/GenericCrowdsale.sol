@@ -157,7 +157,7 @@ contract GenericCrowdsale is ERC223ReceivingContract {
      * Admin can withdraw ether beneficiary address
      */
     function withdrawFunding() external verified {
-        require((state == State.PreIco && now > deadline || successed()));
+        require((state == State.PreIco || successed()));
         beneficiary.transfer(this.balance);
     }
 
@@ -260,7 +260,7 @@ contract GenericCrowdsale is ERC223ReceivingContract {
      * ICO is finished successfully
      */
     function successed() 
-        internal 
+        public 
         view 
         returns(bool) 
     {
