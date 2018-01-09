@@ -15,10 +15,14 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	Stats public stats;
 	Broker public broker;
 
-	mapping (address => uint32) balances;
+	mapping (address => uint32) users;
+	mapping (uint32 => uint32) public balances;
 	mapping (uint => address) public games;
 
+	uint32 max_id = 0;
+
 	modifier owned() { require(msg.sender == service); _; }
+	
 	event GameCreated(address game);
 
 	function Dispatcher(
@@ -27,6 +31,16 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		require(gameTokenAddress > 0);
 		service = msg.sender;
 		gameToken = Token(gameTokenAddress);
+	}
+
+	function registerUser(
+		address user,
+		uint32 id
+	) 
+		external
+		owned
+	{
+		users[user] = id;
 	}
 
 	function setUserStats(
@@ -70,13 +84,31 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		games[id] = address(game);
 	}
 
+	function addParticipants(
+		uint32[] users
+	)
+		external
+		owned
+	{
+		Game gameInstance = Game(game);
+ 		uint gameEntry = gameInstance.gameEntry();
+
+		for (uint256 i = 0; i < users.length; i++) {
+			require(balanceOf(user) >= gameEntry && gameToken.transfer(game, gameEntry));
+ 			balances[user] -= gameEntry;
+            gameInstance.addParticipant(users[i]);
+        }
+	}
+
 	function startGame(
-		address game
+		address game,
+		string hash
 	)
 		external
 		owned
 	{
 		Game(game).startGame();
+		Game(game).setParticipantsHash(hash);
 	}
 
 	function cancelGame(
@@ -89,26 +121,25 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	}
 
 	function finishGame(
-		address game
-	) 
-		external
-		owned
-	{
-		Game(game).finishGame();
-	}
-
-	function addParticipantsHash(
-		string hash,
-		address game
+		address game,
+		string hash
 	)
 		external
 		owned
 	{
-		Game(game).addParticipantsHash(hash);
+		Game(game).finishGame();
+		Game(game).setEventsHash(hash);
 	}
 
-	function tokenFallback(address from, uint value) public {
-		balances[from] += uint32(value);
+	function tokenFallback(
+		address from, 
+		uint value
+	) 
+		public 
+	{
+		uint32 userId = users[from];
+		require(userId > 0);
+		balances[userId] += uint32(value);
 	}
 
 	function deposit(
@@ -118,7 +149,8 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	{
 		require(gameToken.balanceOf(msg.sender) >= sum); 
 		if (gameToken.transferFrom(msg.sender, address(this), sum)) {
-			balances[msg.sender] += sum;
+			uint32 userId = users[msg.sender];
+			balances[userId] += sum;
 		}
 	}
 
@@ -128,9 +160,10 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	) 
 		external 
 	{
-		require(gameToken.balanceOf(msg.sender) >= sum); 
+		require(gameToken.balanceOf(msg.sender) >= sum);
 		if (gameToken.transferFrom(msg.sender, address(this), sum)) {
-			balances[to] += sum;
+			uint32 userId = users[to];
+			balances[userId] += sum;
 		}	
 	}
 
@@ -141,17 +174,18 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	{
 		require(balances[msg.sender] >= sum);
 		if (gameToken.transfer(msg.sender, sum)) {
-			balances[msg.sender] -= sum;
+			uint32 userId = users[msg.sender];
+			balances[userId] -= sum;
 		}
 	}
 
 	function balanceOf(
-		address user
+		uint32 userId
 	)
 		public
 		constant
 		returns (uint32)
 	{
-		return balances[user];
+		return balances[userId];
 	}
 }

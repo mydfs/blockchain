@@ -11,8 +11,8 @@ contract Game is ERC223ReceivingContract {
 	enum State { TeamCreation, InProgress, Finished, Canceled }
 	
 	struct Winner {
-		address user;
-		address beneficiary;
+		uint32 user;
+		uint32 beneficiary;
 		uint32 prize;
 	}
 
@@ -28,7 +28,10 @@ contract Game is ERC223ReceivingContract {
 	Broker public broker;
 	BalanceManager balanceManager;
 
-	string [] public participantHashes;
+	string public participantsHash;
+	mapping (uint32 => uint8) public participants;
+	string public eventsHash;
+
 	Winner [] public winners;
 
 	modifier owned() { require(msg.sender == dispatcher); _; }
@@ -64,14 +67,34 @@ contract Game is ERC223ReceivingContract {
 		gameToken.increaseApproval(dispatcher, 2**255);
 	}
 
-	function addParticipantsHash(
+	function setParticipantsHash(
 		string hash
 	)
 		external
 		beforeStart
 		owned
 	{
-		participantHashes.push(hash);
+		participantsHash = hash;
+	}
+
+	function addParticipant(
+		uint32 user
+	)
+		external
+		beforeStart
+		owned
+	{
+        participants[users]++;
+	}
+
+	function setEventsHash(
+		string hash
+	)
+		external
+		finished
+		owned
+	{
+		eventsHash = hash;
 	}
 
 	function startGame() external owned {

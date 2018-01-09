@@ -12,7 +12,7 @@ contract UserStats is Stats {
 		uint8 feePercent;
 	}
 
-	mapping(address => User) public users;
+	mapping(uint32 => User) public users;
 	mapping(address => bool) public gameAddresses;
 
 	address public owner;
@@ -38,7 +38,7 @@ contract UserStats is Stats {
 	}
 
 	function addPlayerWin(
-		address user,
+		uint32 user,
 		uint32 entrySum,
 		uint32 prize
 	)
@@ -52,7 +52,7 @@ contract UserStats is Stats {
 	}
 
 	function addPlayerLoose(
-		address user,
+		uint32 user,
 		uint32 entrySum
 	)
 		external
@@ -72,7 +72,7 @@ contract UserStats is Stats {
 	}
 
 	function getFeePercent(
-		address user
+		uint32 user
 	)
 		external
 		constant
@@ -83,7 +83,7 @@ contract UserStats is Stats {
 
 	function allowance(
 		address game
-	) 
+	)
 		external
 		constant
 		returns (bool) 
