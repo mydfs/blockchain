@@ -5,6 +5,7 @@ import './interface/ERC223ReceivingContract.sol';
 
 contract GenericCrowdsale is ERC223ReceivingContract {
 
+    //Crowrdsale states
     enum State { Initialized, PreIco, Ico }
 
     struct Deal {
@@ -19,55 +20,57 @@ contract GenericCrowdsale is ERC223ReceivingContract {
 
     //ether trasfered to
     address public beneficiary;
-    //state
+    //Crowrdsale state
     State public state;
-    //сложная цель, например 50 ether
-    uint public preIcoLimit;
-    //сложная цель, например 50 ether
+    //Hard goal in Wei
     uint public hardFundingGoal;
-    //легкая цель, например 10 ether
+    //soft goal in Wei
     uint public softFundingGoal;
-    //gathered Ether amount
+    //gathered Ether amount in Wei
     uint public amountRaised;
-    //timestamp ICO stage finish
+    //ICO/PreICO finish timestamp in seconds
     uint public deadline;
-    //price for 1 token
+    //price for 1 token in Wei
     uint public price;
     //Token cantract
     Token public tokenReward;
-    //Ether balances for refund if ICO failed
+    //Wei balances for refund if ICO failed
     mapping(address => uint256) public balances;
 
-    //admin address
+    //Admin address
     address admin;
 
-    //emergency stop sell
+    //Emergency stop sell
     bool emergencyPaused = false;
-    //soft cap reached
+    //Soft cap reached
     bool softCapReached = false;
-    //disconts
+    
+    //Disconts
     Discount[] public discounts;
-    //Save purchase phase for bonus distribution
+    //Purchase stages for bonus distribution
     mapping(uint8 => Deal[]) public stages;
+    //Bonus values for stages
     uint8[] public bonuses;
+    //Last sell stage
     uint8 max_stage = 0;
+    //Current bonus distribution stage
     uint8 get_bonus_stage = 0;
+    //Current bonus distribution stage element
     uint8 get_bonus_num = 0;
 
     event TokenPurchased(address investor, uint sum, uint tokensCount, uint discountTokens);
-    event Debug(uint value);
     event PreIcoLimitReached(uint totalAmountRaised);
     event SoftGoalReached(uint totalAmountRaised);
     event HardGoalReached(uint totalAmountRaised);
     event Refund(address investor, uint sum);
 
 
-    //only admin access
+    //Only admin access
     modifier verified() { require(msg.sender == admin); _; }
-    //ICO активно
-    modifier sellActive() { require(state == State.PreIco && now < deadline && amountRaised < hardFundingGoal || state == State.Ico && now < deadline && amountRaised < hardFundingGoal); _; }
-    //если не достигли soft cap
-    modifier goalNotReached() { require(state == State.Ico && amountRaised < softFundingGoal); _; }
+    //Sale is active
+    modifier sellActive() { require(!emergencyPaused && state == State.PreIco && now < deadline && amountRaised < hardFundingGoal || state == State.Ico && now < deadline && amountRaised < hardFundingGoal); _; }
+    //Soft cap not reached
+    modifier goalNotReached() { require(state == State.Ico && amountRaised < softFundingGoal && now > deadline); _; }
 
     /**
      * Constrctor function
@@ -85,7 +88,9 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         state = State.Initialized;
     }
 
-    //Start PreICO
+    /**
+     * Start PreICO
+     */
     function PreICO(
         uint hardFundingGoalInEthers,
         uint durationInSeconds,
@@ -106,7 +111,9 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         state = State.PreIco;
     }
 
-    //Start ICO
+    /**
+     * Start ICO
+     */
     function ICO(
         uint softFundingGoalInEthers,
         uint hardFundingGoalInEthers,
@@ -132,19 +139,31 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         state = State.Ico;
     }
 
+    /**
+     * Admin can pause token sell
+     */
     function emergencyPause() external verified {
         emergencyPaused = true;
     }
 
+    /**
+     * Admin can unpause token sell
+     */
     function emergencyUnpause() external verified {
         emergencyPaused = false;
     }
 
+    /**
+     * Admin can withdraw ether beneficiary address
+     */
     function withdrawFunding() external verified {
         require((state == State.PreIco && now > deadline || successed()));
         beneficiary.transfer(this.balance);
     }
 
+    /**
+     * Distribute bonuses after ICO finished successfully 
+     */
     function distributeBonuses() 
         external 
         verified 
@@ -166,6 +185,9 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         return true;
     }
 
+    /**
+     * Claim refund ether in soft goal not reached 
+     */
     function claimRefund() 
         external 
         goalNotReached 
@@ -181,6 +203,9 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         }
     }
 
+    /**
+     * Payment transaction
+     */
     function () 
         external 
         payable 
@@ -198,7 +223,9 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         checkGoals();
     }
 
-    //Purchase in different coins
+    /**
+     * Вifferent coins purchase
+     */
     function foreignPurchase(address user, uint amount)
         external
         verified
@@ -208,7 +235,9 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         checkGoals();
     }
 
-    //Transfer tokens to user
+    /**
+     * Transfer tokens to user
+     */
     function buyTokens(
         address user,
         uint amount
@@ -227,6 +256,9 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         TokenPurchased(msg.sender, amount, count, discountBonus);
     }
 
+    /**
+     * ICO is finished successfully
+     */
     function successed() 
         internal 
         view 
@@ -235,8 +267,14 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         return (state == State.Ico) && ((now >= deadline && amountRaised >= softFundingGoal) || amountRaised >= hardFundingGoal);
     }
 
+    /**
+     * Token fallback
+     */
     function tokenFallback(address from, uint value) { }
 
+    /**
+     * Define bonus percents for different stages
+     */
     function initBonusStages() internal {
         bonuses.push(1);
         bonuses.push(2);
@@ -249,6 +287,9 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         bonuses.push(55);
     }
 
+    /**
+     * Define distount percents for different token amounts
+     */
     function initDiscounts(
         uint32[] discountTokenAmount,
         uint16[] discountValues
@@ -258,6 +299,9 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         }
     }
 
+    /**
+     * Get discount percent for number of tokens
+     */
     function getDiscountOf(
         uint count
     ) 
@@ -274,6 +318,9 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         return 0;
     }
 
+    /**
+     * Store purchase stage for further receiving bonuses
+     */
     function storeStage(
         address user, 
         uint amount
@@ -296,6 +343,9 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         }
     }
 
+    /**
+     * Check ICO goals achievement
+     */
     function checkGoals() internal {
         if (state == State.PreIco) {
             if (amountRaised >= hardFundingGoal) {
