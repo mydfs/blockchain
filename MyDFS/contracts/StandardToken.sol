@@ -5,14 +5,16 @@ import "./interface/ERC223ReceivingContract.sol";
 
 contract StandardToken is Token {
 
-    //балансы токенов всех пользователей 
+    //user token balances
     mapping (address => uint256) balances;
-    //разрешения на перевод токенов юзера A юзеру B в количестве N
+    //token transer permissions
     mapping (address => mapping (address => uint256)) allowed;
-    //общее количество выпущенных токенов
+    //tatal token number
     uint256 public totalSupply;
 
-    //перевод токенов с баланса msg.sender на баланс to в количесте value
+    /**
+     * Token transfer from sender to to
+     */
     function transfer(
         address to,
         uint256 value
@@ -36,7 +38,9 @@ contract StandardToken is Token {
         } else { return false; }
     }
 
-    //перевод токенов юзера from юзеру to в количестве value(необходимо разрешение increaseApproval/decreaseApproval)
+    /**
+     * Token transfer from from to to (permission needed)
+     */
     function transferFrom(
         address from, 
         address to,
@@ -62,7 +66,9 @@ contract StandardToken is Token {
         } else { return false; }
     }
 
-    //увеличить лимит на перевод с кошелька msg.sender для spender на значение value
+    /**
+     * Increase permission for transfer
+     */
     function increaseApproval(
         address spender,
         uint256 value
@@ -75,7 +81,9 @@ contract StandardToken is Token {
         return true;
     }
 
-    //уменшить лимит на перевод с кошелька msg.sender для spender на значение value
+    /**
+     * Decrease permission for transfer
+     */
     function decreaseApproval(
         address spender,
         uint256 value
@@ -88,18 +96,29 @@ contract StandardToken is Token {
         return true;
     }
 
-    function balanceOf(address owner) external constant returns (uint256) {
-        return balances[owner];
-    }
-
-
-    function allowance(
-        address owner, 
-        address spender
+    /**
+     * User token balance
+     */
+    function balanceOf(
+        address owner
     ) 
         external 
         constant 
-        returns (uint256 remaining) 
+        returns (uint256) 
+    {
+        return balances[owner];
+    }
+
+    /**
+     * User transfer permission
+     */
+    function allowance(
+        address owner, 
+        address spender
+    )
+        external
+        constant
+        returns (uint256 remaining)
     {
         return allowed[owner][spender];
     }
