@@ -62,14 +62,14 @@ contract UserStats is Stats {
 		users[user].totalLoseSum += entrySum;
 	}
 
-	function changeFeePercent(
+	/*function changeFeePercent(
 		uint8 amount
 	)
 		external 
 	{
 		require(amount >= 0 && amount <= 100);
 		users[msg.sender].feePercent = amount;
-	}
+	}*/
 
 	function getFeePercent(
 		uint32 user

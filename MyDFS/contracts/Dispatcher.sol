@@ -85,18 +85,20 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	}
 
 	function addParticipants(
-		uint32[] users
+		uint32[] users,
+		address game
 	)
 		external
 		owned
 	{
 		Game gameInstance = Game(game);
- 		uint gameEntry = gameInstance.gameEntry();
+ 		uint32 gameEntry = gameInstance.gameEntry();
 
 		for (uint256 i = 0; i < users.length; i++) {
-			require(balanceOf(user) >= gameEntry && gameToken.transfer(game, gameEntry));
- 			balances[user] -= gameEntry;
-            gameInstance.addParticipant(users[i]);
+			uint32 userId = users[i];
+			require(balanceOf(userId) >= gameEntry && gameToken.transfer(game, gameEntry));
+ 			balances[userId] -= gameEntry;
+            gameInstance.addParticipant(userId);
         }
 	}
 
@@ -172,9 +174,9 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 	)
 		external
 	{
-		require(balances[msg.sender] >= sum);
+		uint32 userId = users[msg.sender];
+		require(balances[userId] >= sum);
 		if (gameToken.transfer(msg.sender, sum)) {
-			uint32 userId = users[msg.sender];
 			balances[userId] -= sum;
 		}
 	}

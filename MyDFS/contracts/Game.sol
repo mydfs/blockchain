@@ -84,7 +84,7 @@ contract Game is ERC223ReceivingContract {
 		beforeStart
 		owned
 	{
-        participants[users]++;
+        participants[user]++;
 	}
 
 	function setEventsHash(

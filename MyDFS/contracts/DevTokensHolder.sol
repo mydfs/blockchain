@@ -3,9 +3,11 @@ pragma solidity ^0.4.16;
 
 import "./GenericCrowdsale.sol";
 import "./MyDFSToken.sol";
+import "./SafeMath.sol";
 
 
 contract DevTokensHolder {
+	using SafeMath for uint256;
 
 	address public owner;
     uint256 collectedTokens;
@@ -14,13 +16,14 @@ contract DevTokensHolder {
 
     event ClaimedTokens(address token, uint256 amount);
     event TokensWithdrawn(address holder, uint256 amount);
+    event Debug(uint256 amount);
 
     modifier verified() { require(msg.sender == owner); _; }
 
-    function DevTokensHolder(address _owner, address _contribution, address _snt) {
-        owner = _owner;
-        crowdsale = StatusContribution(_contribution);
-        token = MiniMeToken(_snt);
+    function DevTokensHolder(address _crowdsale, address _token) {
+        owner = msg.sender;
+        crowdsale = GenericCrowdsale(_crowdsale);
+        token = MyDFSToken(_token);
     }
 
 
@@ -28,19 +31,19 @@ contract DevTokensHolder {
     function collectTokens() public verified {
     	require(crowdsale.successed());
         uint256 balance = token.balanceOf(address(this));
-        uint256 total = collectedTokens + balance;
+        uint256 total = collectedTokens.add(balance);
 
-        uint256 finalizedTime = contribution.deadline();
+        uint256 finalizedTime = crowdsale.deadline();
         require(finalizedTime > 0 && getTime() > finalizedTime);
 
-        uint256 canExtract = total * (getTime() - finalizedTime) / months(12);
-        canExtract = canExtract - collectedTokens;
+        uint256 canExtract = total.mul(getTime().sub(finalizedTime)).div(months(12));
+        canExtract = canExtract.sub(collectedTokens);
 
         if (canExtract > balance) {
             canExtract = balance;
         }
 
-        collectedTokens = collectedTokens + canExtract;
+        collectedTokens = collectedTokens.add(canExtract);
         assert(token.transfer(owner, canExtract));
         TokensWithdrawn(owner, canExtract);
     }
@@ -53,6 +56,10 @@ contract DevTokensHolder {
         return now;
     }
 
+	/**
+     * Token fallback
+     */
+    function tokenFallback(address from, uint value) { }
 
     //////////
     // Safety Methods
@@ -63,7 +70,7 @@ contract DevTokensHolder {
     /// @param _token The address of the token contract that you want to recover
     ///  set to 0 in case you want to extract ether.
     function claimTokens(address _token) public verified {
-        require(_token != address(snt));
+        require(_token != address(token));
         if (_token == 0x0) {
             owner.transfer(this.balance);
             return;

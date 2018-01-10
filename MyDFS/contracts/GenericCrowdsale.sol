@@ -63,6 +63,7 @@ contract GenericCrowdsale is ERC223ReceivingContract {
     event SoftGoalReached(uint totalAmountRaised);
     event HardGoalReached(uint totalAmountRaised);
     event Refund(address investor, uint sum);
+    event Debug(uint num);
 
 
     //Only admin access

@@ -11,8 +11,6 @@ contract StandardToken is Token {
     mapping (address => mapping (address => uint256)) allowed;
     //tatal token number
     uint256 public totalSupply;
-    //Vesting token number
-    uint256 public vesting;
 
     /**
      * Token transfer from sender to to
