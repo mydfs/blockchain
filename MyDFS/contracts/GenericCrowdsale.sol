@@ -2,8 +2,10 @@ pragma solidity ^0.4.16;
 
 import './interface/Token.sol';
 import './interface/ERC223ReceivingContract.sol';
+import "./SafeMath.sol";
 
 contract GenericCrowdsale is ERC223ReceivingContract {
+    using SafeMath for uint256;
 
     //Crowrdsale states
     enum State { Initialized, PreIco, Ico }
@@ -14,8 +16,8 @@ contract GenericCrowdsale is ERC223ReceivingContract {
     }
 
     struct Discount {
-        uint32 amount;
-        uint16 value;
+        uint256 amount;
+        uint256 value;
     }
 
     //ether trasfered to
@@ -48,15 +50,15 @@ contract GenericCrowdsale is ERC223ReceivingContract {
     //Disconts
     Discount[] public discounts;
     //Purchase stages for bonus distribution
-    mapping(uint8 => Deal[]) public stages;
+    mapping(uint256 => Deal[]) public stages;
     //Bonus values for stages
-    uint8[] public bonuses;
+    uint256[] public bonuses;
     //Last sell stage
-    uint8 max_stage = 0;
+    uint256 max_stage = 0;
     //Current bonus distribution stage
-    uint8 get_bonus_stage = 0;
+    uint256 get_bonus_stage = 0;
     //Current bonus distribution stage element
-    uint8 get_bonus_num = 0;
+    uint256 get_bonus_num = 0;
 
     event TokenPurchased(address investor, uint sum, uint tokensCount, uint discountTokens);
     event PreIcoLimitReached(uint totalAmountRaised);
@@ -96,8 +98,8 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         uint hardFundingGoalInEthers,
         uint durationInSeconds,
         uint szaboCostOfEachToken,
-        uint32[] discountTokenAmount,
-        uint16[] discountValues
+        uint256[] discountTokenAmount,
+        uint256[] discountValues
     ) public {
         require(hardFundingGoalInEthers > 0
             && durationInSeconds > 0
@@ -105,9 +107,9 @@ contract GenericCrowdsale is ERC223ReceivingContract {
             && state == State.Initialized
             && discountTokenAmount.length == discountValues.length);
 
-        hardFundingGoal = hardFundingGoalInEthers * 1 ether;
-        deadline = now + durationInSeconds * 1 seconds;
-        price = szaboCostOfEachToken * 1 szabo;
+        hardFundingGoal = hardFundingGoalInEthers.mul(1 ether);
+        deadline = now.add(durationInSeconds.mul(1 seconds));
+        price = szaboCostOfEachToken.mul(1 szabo);
         initDiscounts(discountTokenAmount, discountValues);
         state = State.PreIco;
     }
@@ -120,8 +122,8 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         uint hardFundingGoalInEthers,
         uint durationInSeconds,
         uint szaboCostOfEachToken,
-        uint32[] discountTokenAmount,
-        uint16[] discountValues
+        uint256[] discountTokenAmount,
+        uint256[] discountValues
     ) external verified {
         require(softFundingGoalInEthers > 0
             && hardFundingGoalInEthers > 0
@@ -131,10 +133,10 @@ contract GenericCrowdsale is ERC223ReceivingContract {
             && state < State.Ico
             && discountTokenAmount.length == discountValues.length);
 
-        softFundingGoal = softFundingGoalInEthers * 1 ether;
-        hardFundingGoal = hardFundingGoalInEthers * 1 ether;
-        deadline = now + durationInSeconds * 1 seconds;
-        price = szaboCostOfEachToken * 1 szabo;
+        softFundingGoal = softFundingGoalInEthers.mul(1 ether);
+        hardFundingGoal = hardFundingGoalInEthers.mul(1 ether);
+        deadline = now.add(durationInSeconds.mul(1 seconds));
+        price = szaboCostOfEachToken.mul(1 szabo);
         delete discounts;
         initDiscounts(discountTokenAmount, discountValues);
         state = State.Ico;
@@ -173,16 +175,16 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         require(successed());
 
         if (get_bonus_num >= stages[get_bonus_stage].length) {
-            get_bonus_stage += 1;
+            get_bonus_stage = get_bonus_stage.add(1);
             if (get_bonus_stage >= max_stage)
                 return false;
             get_bonus_num = 0;
         }
 
-        uint8 stage_bonus_percent = bonuses[max_stage - get_bonus_stage - 1];
-        uint token_bonus = (stages[get_bonus_stage][get_bonus_num].amount * stage_bonus_percent / 100) / price;
+        uint256 stage_bonus_percent = bonuses[max_stage.sub(get_bonus_stage).sub(1)];
+        uint256 token_bonus = (stages[get_bonus_stage][get_bonus_num].amount.mul(stage_bonus_percent).div(100)).div(price);
         tokenReward.transfer(stages[get_bonus_stage][get_bonus_num].user, token_bonus);
-        get_bonus_num += 1;
+        get_bonus_num = get_bonus_num.add(1);
         return true;
     }
 
@@ -193,7 +195,7 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         external 
         goalNotReached 
     {
-        uint amount = balances[msg.sender];
+        uint256 amount = balances[msg.sender];
         balances[msg.sender] = 0;
         if (amount > 0){
             if (msg.sender.send(amount)) {
@@ -214,9 +216,9 @@ contract GenericCrowdsale is ERC223ReceivingContract {
     {
         require(msg.value > 0);
         uint amount = msg.value;
-        if (amount > hardFundingGoal - amountRaised){
-            uint availableAmount = hardFundingGoal - amountRaised;
-            msg.sender.transfer(amount - availableAmount);
+        if (amount > hardFundingGoal.sub(amountRaised)) {
+            uint availableAmount = hardFundingGoal.sub(amountRaised);
+            msg.sender.transfer(amount.sub(availableAmount));
             amount = availableAmount;
         }
 
@@ -227,7 +229,7 @@ contract GenericCrowdsale is ERC223ReceivingContract {
     /**
      * Вifferent coins purchase
      */
-    function foreignPurchase(address user, uint amount)
+    function foreignPurchase(address user, uint256 amount)
         external
         verified
         sellActive
@@ -241,18 +243,18 @@ contract GenericCrowdsale is ERC223ReceivingContract {
      */
     function buyTokens(
         address user,
-        uint amount
+        uint256 amount
     ) internal {
-    	require(amount < hardFundingGoal - amountRaised);
+    	require(amount < hardFundingGoal.sub(amountRaised));
 
-        uint count = amount / price + (amount % price > 0 ? 1 : 0);
-        uint16 discount = getDiscountOf(count);
-        uint discountBonus = discount * count / 100 + ((discount * count) % 100 > 0 ? 1 : 0);
-        count += discountBonus;
+        uint256 count = amount.div(price).add(amount % price > 0 ? 1 : 0);
+        uint256 discount = getDiscountOf(count);
+        uint256 discountBonus = discount.mul(count).div(100).add(discount.mul(count) % 100 > 0 ? 1 : 0);
+        count = count.add(discountBonus);
 
         require(tokenReward.transfer(user, count));
-        balances[user] += amount;
-        amountRaised += amount;
+        balances[user] = balances[user].add(amount);
+        amountRaised = amountRaised.add(amount);
         storeStage(user, amount);
         TokenPurchased(msg.sender, amount, count, discountBonus);
     }
@@ -271,7 +273,7 @@ contract GenericCrowdsale is ERC223ReceivingContract {
     /**
      * Token fallback
      */
-    function tokenFallback(address from, uint value) { }
+    function tokenFallback(address from, uint256 value) { }
 
     /**
      * Define bonus percents for different stages
@@ -292,8 +294,8 @@ contract GenericCrowdsale is ERC223ReceivingContract {
      * Define distount percents for different token amounts
      */
     function initDiscounts(
-        uint32[] discountTokenAmount,
-        uint16[] discountValues
+        uint256[] discountTokenAmount,
+        uint256[] discountValues
     ) internal {
         for (uint256 i = 0; i < discountTokenAmount.length; i++) {
             discounts.push(Discount(discountTokenAmount[i], discountValues[i]));
@@ -304,11 +306,11 @@ contract GenericCrowdsale is ERC223ReceivingContract {
      * Get discount percent for number of tokens
      */
     function getDiscountOf(
-        uint count
+        uint256 count
     ) 
         public
         constant
-        returns (uint16)
+        returns (uint256)
     {
         if (discounts.length > 0)
             for (uint256 i = discounts.length - 1; i >= 0; i--) {
@@ -324,16 +326,16 @@ contract GenericCrowdsale is ERC223ReceivingContract {
      */
     function storeStage(
         address user, 
-        uint amount
+        uint256 amount
     ) internal {
-        uint8 before_stage = uint8(10 * (amountRaised - amount) / hardFundingGoal);
-        uint8 after_stage = uint8(10 * amountRaised / hardFundingGoal);
+        uint256 before_stage = amountRaised.sub(amount).mul(10).div(hardFundingGoal);
+        uint256 after_stage = amountRaised.mul(10).div(hardFundingGoal);
         
         if (before_stage != after_stage) {
-            uint stage_amount = hardFundingGoal / 10;
-            uint part1 = stage_amount - (amountRaised - amount) % stage_amount;
+            uint256 stage_amount = hardFundingGoal.div(10);
+            uint256 part1 = stage_amount.sub(amountRaised.sub(amount) % stage_amount);
             stages[before_stage].push(Deal(user, part1));
-            uint part2 = amount - part1;
+            uint256 part2 = amount.sub(part1);
             if (part2 > 0)
                 storeStage(user, part2);
             else
