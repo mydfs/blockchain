@@ -2,8 +2,10 @@ pragma solidity ^0.4.16;
 
 import "./interface/Token.sol";
 import "./interface/ERC223ReceivingContract.sol";
+import "./SafeMath.sol";
 
 contract StandardToken is Token {
+    using SafeMath for uint256;
 
     //user token balances
     mapping (address => uint256) balances;
@@ -27,8 +29,8 @@ contract StandardToken is Token {
             codeLength := extcodesize(to)
         }
         if (balances[msg.sender] >= value && value > 0) {
-            balances[msg.sender] -= value;
-            balances[to] += value;
+            balances[msg.sender] = balances[msg.sender].sub(value);
+            balances[to] = balances[to].add(value);
             if (codeLength > 0) {
                 ERC223ReceivingContract receiver = ERC223ReceivingContract(to);
                 receiver.tokenFallback(msg.sender, value);
@@ -54,9 +56,9 @@ contract StandardToken is Token {
             codeLength := extcodesize(to)
         }
         if (balances[from] >= value && allowed[from][msg.sender] >= value && value > 0) {
-            balances[to] += value;
-            balances[from] -= value;
-            allowed[from][msg.sender] -= value;
+            balances[to] = balances[to].add(value);
+            balances[from] = balances[from].sub(value);
+            allowed[from][msg.sender] = allowed[from][msg.sender].sub(value);
             if (codeLength > 0) {
                 ERC223ReceivingContract receiver = ERC223ReceivingContract(to);
                 receiver.tokenFallback(msg.sender, value);
@@ -76,7 +78,7 @@ contract StandardToken is Token {
         external
         returns (bool) 
     {
-        allowed[msg.sender][spender] += value;
+        allowed[msg.sender][spender] = allowed[msg.sender][spender].add(value);
         Approval(msg.sender, spender, allowed[msg.sender][spender]);
         return true;
     }
@@ -91,7 +93,7 @@ contract StandardToken is Token {
         external
         returns (bool) 
     {
-        allowed[msg.sender][spender] -= value;
+        allowed[msg.sender][spender] = allowed[msg.sender][spender].add(value);
         Approval(msg.sender, spender, allowed[msg.sender][spender]);
         return true;
     }

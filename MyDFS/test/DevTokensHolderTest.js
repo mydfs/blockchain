@@ -82,7 +82,7 @@ contract('DevTokensHolder', function(accounts){
 		});
 		await sleep(3000);
 
-		//change current time to 3 month later
+		//change current time to 12 month later
 		var deadline = await crowdsale.deadline();
 		const t = deadline.toNumber() + (86400 * 360);
         await devTokensHolder.setMockedTime(t);
