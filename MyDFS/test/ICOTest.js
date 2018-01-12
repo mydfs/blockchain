@@ -33,7 +33,7 @@ contract('GenericCrowdsale', function(accounts){
 		var state = await instance.state.call();
 		assert.equal(state.toNumber(), 0);
 
-		await instance.PreICO(10, 3, 1e3, [], []);
+		await instance.preIco(10, 3, 1e3, [], []);
 		var state = await instance.state.call();
 		assert.equal(state.toNumber(), 1);
 
@@ -70,7 +70,7 @@ contract('GenericCrowdsale', function(accounts){
 		var state = await instance.state.call();
 		assert.equal(state.toNumber(), 0);
 
-		await instance.ICO(10, 100, 3, 1e3, [], []);
+		await instance.ico(10, 100, 3, 1e3, [], []);
 		var state = await instance.state.call();
 		assert.equal(state.toNumber(), 2);
 
@@ -103,7 +103,7 @@ contract('GenericCrowdsale', function(accounts){
 		var token = await MyDFSToken.new({from: accounts[0]});
 		var instance = await GenericCrowdsale.new(accounts[1], token.address);
 		await token.transfer(instance.address, 11500, {from : accounts[0]});
-		await instance.ICO(2, 20, 3, 1e3, [], []);
+		await instance.ico(2, 20, 3, 1e3, [], []);
 
 		var investor = accounts[1];
 		await web3.eth.sendTransaction({
@@ -127,7 +127,7 @@ contract('GenericCrowdsale', function(accounts){
 		var token = await MyDFSToken.new({from: accounts[0]});
 		var instance = await GenericCrowdsale.new(accounts[1], token.address);
 		await token.transfer(instance.address, 11500, {from : accounts[0]});
-		await instance.ICO(2, 20, 3, 1e3, [], []);
+		await instance.ico(2, 20, 3, 1e3, [], []);
 
 		var investor1 = accounts[1];
 		var investor2 = accounts[2];
@@ -136,7 +136,7 @@ contract('GenericCrowdsale', function(accounts){
 		await web3.eth.sendTransaction({
 		    from: investor1,
 		    to: instance.address,
-		    value: web3.toWei(3),
+		    value: web3.toWei(6),
 		    gas: 5000000
 		});
 		await web3.eth.sendTransaction({
@@ -156,21 +156,23 @@ contract('GenericCrowdsale', function(accounts){
 		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
 		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
 		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
+		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
+		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
 		var bonus_send = await instance.distributeBonuses.call({from: accounts[0], gas: 5000000});
 		assert.isFalse(bonus_send.valueOf(), 'bonus distributed');
 		boughtTokens = await token.balanceOf(investor1);
-		assert.equal(boughtTokens.toNumber(), 3050);
+		assert.equal(boughtTokens.toNumber(), 6200);
 		boughtTokens = await token.balanceOf(investor2);
 		assert.equal(boughtTokens.toNumber(), 1010);
 		boughtTokens = await token.balanceOf(investor3);
-		assert.equal(boughtTokens.toNumber(), 2000);
+		assert.equal(boughtTokens.toNumber(), 2010);
 	});
 
 	it("refund works if soft goal not reached", async function() {
 		var token = await MyDFSToken.new({from: accounts[0]});
 		var instance = await GenericCrowdsale.new(accounts[1], token.address);
 		await token.transfer(instance.address, 11500, {from : accounts[0]});
-		await instance.ICO(2, 20, 3, 1e3, [], []);
+		await instance.ico(2, 20, 3, 1e3, [], []);
 
 		var investor = accounts[1];
 
@@ -199,7 +201,7 @@ contract('GenericCrowdsale', function(accounts){
 		var token = await MyDFSToken.new({from: accounts[0]});
 		var instance = await GenericCrowdsale.new(accounts[1], token.address);
 		await token.transfer(instance.address, 11500, {from : accounts[0]});
-		await instance.ICO(1000, 10000, 3, 1e6, [], []);
+		await instance.ico(1000, 10000, 3, 1e6, [], []);
 
 		var investor = accounts[1];
 		await web3.eth.sendTransaction({
@@ -224,7 +226,7 @@ contract('GenericCrowdsale', function(accounts){
 		var token = await MyDFSToken.new({from: accounts[0]});
 		var instance = await GenericCrowdsale.new(accounts[1], token.address);
 		await token.transfer(instance.address, 11500, {from : accounts[0]});
-		await instance.ICO(1, 10000, 5, 1e6, [], []);
+		await instance.ico(1, 10000, 5, 1e6, [], []);
 
 		var investor = accounts[1];
 		await web3.eth.sendTransaction({
@@ -245,7 +247,7 @@ contract('GenericCrowdsale', function(accounts){
 		var token = await MyDFSToken.new({from: accounts[0]});
 		var instance = await GenericCrowdsale.new(accounts[1], token.address);
 		await token.transfer(instance.address, 11500, {from : accounts[0]});
-		await instance.ICO(2, 20, 3, 1e3, [], []);
+		await instance.ico(2, 20, 3, 1e3, [], []);
 
 		var investor = accounts[1];
 		instance.foreignPurchase(investor, 1e18);
@@ -257,7 +259,7 @@ contract('GenericCrowdsale', function(accounts){
 		var token = await MyDFSToken.new({from: accounts[0]});
 		var instance = await GenericCrowdsale.new(accounts[1], token.address);
 		await token.transfer(instance.address, 11500, {from : accounts[0]});
-		await instance.ICO(2, 20, 3, 1e3, [1000, 3000], [5, 20]);
+		await instance.ico(2, 20, 3, 1e3, [3000, 1000], [20, 5]);
 
 		var investor1 = accounts[1];
 		var investor2 = accounts[2];
@@ -294,6 +296,49 @@ contract('GenericCrowdsale', function(accounts){
 		assert.equal(boughtTokens.toNumber(), 1060);
 		boughtTokens = await token.balanceOf(investor3);
 		assert.equal(boughtTokens.toNumber(), 2100);
+	});
+
+	it("ICO Discounts Works 2", async function(){
+		var token = await MyDFSToken.new({from: accounts[0]});
+		var instance = await GenericCrowdsale.new(accounts[1], token.address);
+		await token.transfer(instance.address, 11500, {from : accounts[0]});
+		await instance.ico(2, 20, 3, 1e3, [3000], [5]);
+
+		var investor1 = accounts[1];
+		var investor2 = accounts[2];
+		var investor3 = accounts[3];
+
+		await web3.eth.sendTransaction({
+		    from: investor1,
+		    to: instance.address,
+		    value: web3.toWei(3),
+		    gas: 5000000
+		});
+		await web3.eth.sendTransaction({
+		    from: investor2,
+		    to: instance.address,
+		    value: web3.toWei(1),
+		    gas: 5000000
+		});
+		await web3.eth.sendTransaction({
+		    from: investor3,
+		    to: instance.address,
+		    value: web3.toWei(2),
+		    gas: 5000000
+		});
+		await sleep(2000);
+		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
+		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
+		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
+		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
+		var bonus_send = await instance.distributeBonuses.call({from: accounts[0], gas: 5000000});
+		assert.isFalse(bonus_send.valueOf(), 'bonus distributed');
+		boughtTokens = await token.balanceOf(investor1);
+		assert.equal(boughtTokens.toNumber(), 3200);
+		boughtTokens = await token.balanceOf(investor2);
+		assert.equal(boughtTokens.toNumber(), 1010);
+		boughtTokens = await token.balanceOf(investor3);
+		assert.equal(boughtTokens.toNumber(), 2000);
 	});
 });
 

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.16;
+pragma solidity ^0.4.18;
 
 import '../DevTokensHolder.sol';
 
@@ -13,11 +13,11 @@ contract DevTokensHolderMock is DevTokensHolder {
         mock_time = now;
     }
 
-    function getTime() internal returns (uint) {
+    function getTime() internal view returns (uint) {
         return mock_time;
     }
 
-    function setMockedTime(uint _t) {
+    function setMockedTime(uint _t) public {
         mock_time = _t;
     }
 }

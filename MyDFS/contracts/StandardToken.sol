@@ -1,4 +1,4 @@
-pragma solidity ^0.4.16;
+pragma solidity ^0.4.18;
 
 import "./interface/Token.sol";
 import "./interface/ERC223ReceivingContract.sol";
@@ -21,7 +21,36 @@ contract StandardToken is Token {
         address to,
         uint256 value
     )
-        external 
+        public 
+        returns (bool) 
+    {
+        bytes memory empty;
+        uint codeLength;
+        assembly {
+            codeLength := extcodesize(to)
+        }
+        if (balances[msg.sender] >= value && value > 0) {
+            balances[msg.sender] = balances[msg.sender].sub(value);
+            balances[to] = balances[to].add(value);
+            if (codeLength > 0) {
+                ERC223ReceivingContract receiver = ERC223ReceivingContract(to);
+                receiver.tokenFallback(msg.sender, value, empty);
+            }
+            Transfer(msg.sender, to, value, empty);
+            return true;
+        } else { return false; }
+    }
+
+
+    /**
+     * Token transfer from sender to to
+     */
+    function transfer(
+        address to,
+        uint256 value,
+        bytes _data
+    )
+        public 
         returns (bool) 
     {
         uint codeLength;
@@ -33,9 +62,9 @@ contract StandardToken is Token {
             balances[to] = balances[to].add(value);
             if (codeLength > 0) {
                 ERC223ReceivingContract receiver = ERC223ReceivingContract(to);
-                receiver.tokenFallback(msg.sender, value);
+                receiver.tokenFallback(msg.sender, value, _data);
             }
-            Transfer(msg.sender, to, value);
+            Transfer(msg.sender, to, value, _data);
             return true;
         } else { return false; }
     }
@@ -48,9 +77,10 @@ contract StandardToken is Token {
         address to,
         uint256 value
     ) 
-        external 
+        public 
         returns (bool)
     {
+        bytes memory empty;
         uint codeLength;
         assembly {
             codeLength := extcodesize(to)
@@ -61,9 +91,9 @@ contract StandardToken is Token {
             allowed[from][msg.sender] = allowed[from][msg.sender].sub(value);
             if (codeLength > 0) {
                 ERC223ReceivingContract receiver = ERC223ReceivingContract(to);
-                receiver.tokenFallback(msg.sender, value);
+                receiver.tokenFallback(msg.sender, value, empty);
             }
-            Transfer(from, to, value);
+            Transfer(from, to, value, empty);
             return true;
         } else { return false; }
     }
@@ -75,7 +105,7 @@ contract StandardToken is Token {
         address spender,
         uint256 value
     )
-        external
+        public
         returns (bool) 
     {
         allowed[msg.sender][spender] = allowed[msg.sender][spender].add(value);
@@ -90,7 +120,7 @@ contract StandardToken is Token {
         address spender,
         uint256 value
     )
-        external
+        public
         returns (bool) 
     {
         allowed[msg.sender][spender] = allowed[msg.sender][spender].add(value);
@@ -104,7 +134,7 @@ contract StandardToken is Token {
     function balanceOf(
         address owner
     ) 
-        external 
+        public 
         constant 
         returns (uint256) 
     {
@@ -118,7 +148,7 @@ contract StandardToken is Token {
         address owner, 
         address spender
     )
-        external
+        public
         constant
         returns (uint256 remaining)
     {

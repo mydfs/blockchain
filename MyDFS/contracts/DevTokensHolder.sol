@@ -1,4 +1,4 @@
-pragma solidity ^0.4.16;
+pragma solidity ^0.4.18;
 
 
 import "./GenericCrowdsale.sol";
@@ -20,12 +20,16 @@ contract DevTokensHolder {
 
     modifier verified() { require(msg.sender == owner); _; }
 
-    function DevTokensHolder(address _crowdsale, address _token) {
+    function DevTokensHolder(address _crowdsale, address _token) public {
         owner = msg.sender;
         crowdsale = GenericCrowdsale(_crowdsale);
         token = MyDFSToken(_token);
     }
 
+    /**
+     * Token fallback
+     */
+    function tokenFallback(address _from, uint _value, bytes _data) public { }
 
     /// @notice The Dev (Owner) will call this method to extract the tokens
     function collectTokens() public verified {
@@ -33,7 +37,7 @@ contract DevTokensHolder {
         uint256 balance = token.balanceOf(address(this));
         uint256 total = collectedTokens.add(balance);
 
-        uint256 finalizedTime = crowdsale.deadline();
+        uint256 finalizedTime = crowdsale.finishTime();
         require(finalizedTime > 0 && getTime() > finalizedTime);
 
         uint256 canExtract = total.mul(getTime().sub(finalizedTime)).div(months(12));
@@ -44,22 +48,17 @@ contract DevTokensHolder {
         }
 
         collectedTokens = collectedTokens.add(canExtract);
-        assert(token.transfer(owner, canExtract));
+        require(token.transfer(owner, canExtract));
         TokensWithdrawn(owner, canExtract);
     }
 
-    function months(uint256 m) internal returns (uint256) {
+    function months(uint256 m) internal pure returns (uint256) {
         return m.mul(30 days);
     }
 
-    function getTime() internal returns (uint256) {
+    function getTime() internal view returns (uint256) {
         return now;
     }
-
-	/**
-     * Token fallback
-     */
-    function tokenFallback(address from, uint value) { }
 
     //////////
     // Safety Methods
@@ -76,7 +75,7 @@ contract DevTokensHolder {
             return;
         }
 
-        MyDFSToken token = MyDFSToken(_token);
+        token = MyDFSToken(_token);
         uint256 balance = token.balanceOf(this);
         token.transfer(owner, balance);
         ClaimedTokens(_token, balance);
