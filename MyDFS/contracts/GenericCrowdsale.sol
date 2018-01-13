@@ -1,10 +1,10 @@
 pragma solidity ^0.4.18;
 
 import './interface/Token.sol';
-import './interface/ERC223ReceivingContract.sol';
+import './Ownable.sol';
 import "./SafeMath.sol";
 
-contract GenericCrowdsale is ERC223ReceivingContract {
+contract GenericCrowdsale is Ownable {
     using SafeMath for uint256;
 
     //Crowrdsale states
@@ -41,9 +41,6 @@ contract GenericCrowdsale is ERC223ReceivingContract {
     //Wei balances for refund if ICO failed
     mapping(address => uint256) public balances;
 
-    //Admin address
-    address admin;
-
     //Emergency stop sell
     bool emergencyPaused = false;
     //Soft cap reached
@@ -70,8 +67,6 @@ contract GenericCrowdsale is ERC223ReceivingContract {
     event Debug(uint num);
 
 
-    //Only admin access
-    modifier verified() { require(msg.sender == admin); _; }
     //Sale is active
     modifier sellActive() { 
         require(
@@ -93,16 +88,10 @@ contract GenericCrowdsale is ERC223ReceivingContract {
     ) public {
         require(ifSuccessfulSendTo != address(0) 
             && addressOfTokenUsedAsReward != address(0));
-        admin = msg.sender;
         beneficiary = ifSuccessfulSendTo;
         tokenReward = Token(addressOfTokenUsedAsReward);
         state = State.Initialized;
     }
-
-    /**
-     * Token fallback
-     */
-    function tokenFallback(address _from, uint _value, bytes _data) public { }
 
     /**
      * Start PreICO
@@ -115,7 +104,7 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         uint256[] discountValues
     ) 
         external 
-        verified 
+        onlyOwner 
     {
         require(hardFundingGoalInEthers > 0
             && durationInSeconds > 0
@@ -143,7 +132,7 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         uint256[] discountValues
     ) 
         external
-        verified
+        onlyOwner
     {
         require(softFundingGoalInEthers > 0
             && hardFundingGoalInEthers > 0
@@ -166,21 +155,21 @@ contract GenericCrowdsale is ERC223ReceivingContract {
     /**
      * Admin can pause token sell
      */
-    function emergencyPause() external verified {
+    function emergencyPause() external onlyOwner {
         emergencyPaused = true;
     }
 
     /**
      * Admin can unpause token sell
      */
-    function emergencyUnpause() external verified {
+    function emergencyUnpause() external onlyOwner {
         emergencyPaused = false;
     }
 
     /**
      * Admin can withdraw ether beneficiary address
      */
-    function withdrawFunding() external verified {
+    function withdrawFunding() external onlyOwner {
         require((state == State.PreIco || successed()));
         beneficiary.transfer(this.balance);
     }
@@ -190,7 +179,7 @@ contract GenericCrowdsale is ERC223ReceivingContract {
      */
     function distributeBonuses() 
         external 
-        verified 
+        onlyOwner 
         returns(bool) 
     {
         require(successed());
@@ -207,6 +196,18 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         tokenReward.transfer(stages[getBonusStage][getBonusNum].user, token_bonus);
         getBonusNum = getBonusNum.add(1);
         return true;
+    }
+
+    /**
+     * Вifferent coins purchase
+     */
+    function foreignPurchase(address user, uint256 amount)
+        external
+        onlyOwner
+        sellActive
+    {
+        buyTokens(user, amount);
+        checkGoals();
     }
 
     /**
@@ -244,18 +245,6 @@ contract GenericCrowdsale is ERC223ReceivingContract {
         }
 
         buyTokens(msg.sender,  amount);
-        checkGoals();
-    }
-
-    /**
-     * Вifferent coins purchase
-     */
-    function foreignPurchase(address user, uint256 amount)
-        external
-        verified
-        sellActive
-    {
-        buyTokens(user, amount);
         checkGoals();
     }
 

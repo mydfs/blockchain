@@ -3,13 +3,13 @@ pragma solidity ^0.4.18;
 
 import "./GenericCrowdsale.sol";
 import "./MyDFSToken.sol";
+import './Ownable.sol';
 import "./SafeMath.sol";
 
 
-contract DevTokensHolder {
+contract DevTokensHolder is Ownable {
 	using SafeMath for uint256;
 
-	address public owner;
     uint256 collectedTokens;
     GenericCrowdsale crowdsale;
     MyDFSToken token;
@@ -18,21 +18,13 @@ contract DevTokensHolder {
     event TokensWithdrawn(address holder, uint256 amount);
     event Debug(uint256 amount);
 
-    modifier verified() { require(msg.sender == owner); _; }
-
     function DevTokensHolder(address _crowdsale, address _token) public {
-        owner = msg.sender;
         crowdsale = GenericCrowdsale(_crowdsale);
         token = MyDFSToken(_token);
     }
 
-    /**
-     * Token fallback
-     */
-    function tokenFallback(address _from, uint _value, bytes _data) public { }
-
     /// @notice The Dev (Owner) will call this method to extract the tokens
-    function collectTokens() public verified {
+    function collectTokens() public onlyOwner {
     	require(crowdsale.successed());
         uint256 balance = token.balanceOf(address(this));
         uint256 total = collectedTokens.add(balance);
@@ -68,7 +60,7 @@ contract DevTokensHolder {
     ///  sent tokens to this contract.
     /// @param _token The address of the token contract that you want to recover
     ///  set to 0 in case you want to extract ether.
-    function claimTokens(address _token) public verified {
+    function claimTokens(address _token) public onlyOwner {
         require(_token != address(token));
         if (_token == 0x0) {
             owner.transfer(this.balance);

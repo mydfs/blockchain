@@ -250,7 +250,7 @@ contract('GenericCrowdsale', function(accounts){
 		await instance.ico(2, 20, 3, 1e3, [], []);
 
 		var investor = accounts[1];
-		instance.foreignPurchase(investor, 1e18);
+		instance.foreignPurchase(investor, 1e18, {from : accounts[0]});
 		const boughtTokens = await token.balanceOf(investor);
 		assert.equal(boughtTokens.toNumber(), 1000);
 	});
