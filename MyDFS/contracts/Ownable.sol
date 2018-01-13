@@ -7,20 +7,15 @@ contract Ownable {
     event OwnershipRequested(address indexed _by, address indexed _to);
     event OwnershipTransferred(address indexed _from, address indexed _to);
 
-    function Ownable() {
+    function Ownable() public {
         owner = msg.sender;
     }
 
-    modifier onlyOwner() {
-        if (msg.sender != owner) {
-            throw;
-        }
-        _;
-    }
+    modifier onlyOwner() { require(msg.sender == owner); _;}
 
     /// Proposes to transfer control of the contract to a newOwnerCandidate.
     /// @param _newOwnerCandidate address The address to transfer ownership to.
-    function transferOwnership(address _newOwnerCandidate) onlyOwner {
+    function transferOwnership(address _newOwnerCandidate) external onlyOwner {
         require(_newOwnerCandidate != address(0));
 
         newOwnerCandidate = _newOwnerCandidate;
@@ -29,7 +24,7 @@ contract Ownable {
     }
 
     /// Accept ownership transfer. This method needs to be called by the perviously proposed owner.
-    function acceptOwnership() {
+    function acceptOwnership() external {
         if (msg.sender == newOwnerCandidate) {
             owner = newOwnerCandidate;
             newOwnerCandidate = address(0);

@@ -49,15 +49,13 @@ contract GenericCrowdsale is Ownable {
     //Disconts
     Discount[] public discounts;
     //Purchase stages for bonus distribution
-    mapping(uint256 => Deal[]) public stages;
+    mapping(address => uint256)[10] public stages;
     //Bonus values for stages
-    uint8[10] public bonuses = [1,2,3,5,8,13,21,34,55];
-    //Last sell stage
+    uint8[10] public bonuses = [0,1,2,3,5,8,13,21,34,55];
+     //Last sell stage
     uint256 maxStage = 0;
-    //Current bonus distribution stage
-    uint256 getBonusStage = 0;
-    //Current bonus distribution stage element
-    uint256 getBonusNum = 0;
+    //Purchase stages for bonus distribution
+    mapping(address => bool) public bonusSent;
 
     event TokenPurchased(address investor, uint sum, uint tokensCount, uint discountTokens);
     event PreIcoLimitReached(uint totalAmountRaised);
@@ -175,30 +173,6 @@ contract GenericCrowdsale is Ownable {
     }
 
     /**
-     * Distribute bonuses after ICO finished successfully 
-     */
-    function distributeBonuses() 
-        external 
-        onlyOwner 
-        returns(bool) 
-    {
-        require(successed());
-
-        if (getBonusNum >= stages[getBonusStage].length) {
-            getBonusStage = getBonusStage.add(1);
-            if (getBonusStage >= maxStage)
-                return false;
-            getBonusNum = 0;
-        }
-
-        uint256 stage_bonus_percent = bonuses[maxStage.sub(getBonusStage).sub(1)];
-        uint256 token_bonus = (stages[getBonusStage][getBonusNum].amount.mul(stage_bonus_percent).div(100)).div(price);
-        tokenReward.transfer(stages[getBonusStage][getBonusNum].user, token_bonus);
-        getBonusNum = getBonusNum.add(1);
-        return true;
-    }
-
-    /**
      * Вifferent coins purchase
      */
     function foreignPurchase(address user, uint256 amount)
@@ -208,6 +182,32 @@ contract GenericCrowdsale is Ownable {
     {
         buyTokens(user, amount);
         checkGoals();
+    }
+
+    /**
+     * Claim bonus after ICO finished successfully 
+     */
+    function claimBonus() 
+        external 
+    {
+        require(successed());
+        require(!bonusSent[msg.sender]);
+        address user = msg.sender;
+
+        uint256 total_bonus = 0;
+        for (uint8 i = 0; i < 10; i++) {
+            uint256 purchase = stages[i][user];
+            if (purchase > 0) {
+                uint256 stage_bonus_percent = bonuses[maxStage.sub(i)];
+                uint256 token_bonus = (purchase.mul(stage_bonus_percent).div(100)).div(price);
+                total_bonus = total_bonus.add(token_bonus);
+            }
+        }
+
+        if (total_bonus > 0) {
+            tokenReward.transfer(user, total_bonus);
+            bonusSent[user] = true;
+        }
     }
 
     /**
@@ -324,14 +324,14 @@ contract GenericCrowdsale is Ownable {
         if (before_stage != after_stage) {
             uint256 stage_amount = hardFundingGoal.div(10);
             uint256 part1 = stage_amount.sub(amountRaised.sub(amount) % stage_amount);
-            stages[before_stage].push(Deal(user, part1));
+            stages[before_stage][user] = stages[before_stage][user].add(part1);
             uint256 part2 = amount.sub(part1);
             if (part2 > 0)
                 storeStage(user, part2);
             else
                 maxStage = before_stage;
         } else {
-            stages[before_stage].push(Deal(user, amount));
+            stages[before_stage][user] = stages[before_stage][user].add(amount);
             maxStage = before_stage;
         }
     }

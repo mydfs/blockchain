@@ -113,12 +113,7 @@ contract('GenericCrowdsale', function(accounts){
 		    gas: 5000000
 		});
 		await sleep(3000);
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		var bonus_send = await instance.distributeBonuses.call({from: accounts[0], gas: 5000000});
-		assert.isFalse(bonus_send.valueOf(), 'no bonus');
+		await instance.claimBonus({from: investor, gas: 5000000});
 		const boughtTokens = await token.balanceOf(investor);
 		assert.equal(boughtTokens.toNumber(), 9220);
 	});
@@ -151,15 +146,12 @@ contract('GenericCrowdsale', function(accounts){
 		    value: web3.toWei(2),
 		    gas: 5000000
 		});
+		
 		await sleep(2000);
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		var bonus_send = await instance.distributeBonuses.call({from: accounts[0], gas: 5000000});
-		assert.isFalse(bonus_send.valueOf(), 'bonus distributed');
+		await instance.claimBonus({from: investor1, gas: 5000000});
+		await instance.claimBonus({from: investor2, gas: 5000000});
+		await instance.claimBonus({from: investor3, gas: 5000000});
+
 		boughtTokens = await token.balanceOf(investor1);
 		assert.equal(boughtTokens.toNumber(), 6200);
 		boughtTokens = await token.balanceOf(investor2);
@@ -283,13 +275,12 @@ contract('GenericCrowdsale', function(accounts){
 		    value: web3.toWei(2),
 		    gas: 5000000
 		});
+		
 		await sleep(2000);
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		var bonus_send = await instance.distributeBonuses.call({from: accounts[0], gas: 5000000});
-		assert.isFalse(bonus_send.valueOf(), 'bonus distributed');
+		await instance.claimBonus({from: investor1, gas: 5000000});
+		await instance.claimBonus({from: investor2, gas: 5000000});
+		await instance.claimBonus({from: investor3, gas: 5000000});
+
 		boughtTokens = await token.balanceOf(investor1);
 		assert.equal(boughtTokens.toNumber(), 3650);
 		boughtTokens = await token.balanceOf(investor2);
@@ -327,12 +318,18 @@ contract('GenericCrowdsale', function(accounts){
 		    gas: 5000000
 		});
 		await sleep(2000);
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		await instance.distributeBonuses({from: accounts[0], gas: 5000000});
-		var bonus_send = await instance.distributeBonuses.call({from: accounts[0], gas: 5000000});
-		assert.isFalse(bonus_send.valueOf(), 'bonus distributed');
+
+		await instance.claimBonus({from: investor1, gas: 5000000});
+		try{
+			await instance.claimBonus({from: investor1, gas: 5000000});
+			assert.fail("Retry claim bonus should throw error");
+		}  catch(error) {
+            assert.ok(true);
+        }
+
+		await instance.claimBonus({from: investor2, gas: 5000000});
+		await instance.claimBonus({from: investor3, gas: 5000000});
+
 		boughtTokens = await token.balanceOf(investor1);
 		assert.equal(boughtTokens.toNumber(), 3200);
 		boughtTokens = await token.balanceOf(investor2);
