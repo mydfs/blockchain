@@ -337,6 +337,29 @@ contract('GenericCrowdsale', function(accounts){
 		boughtTokens = await token.balanceOf(investor3);
 		assert.equal(boughtTokens.toNumber(), 2000);
 	});
+
+	it("overhead correctly works", async function(){
+		var token = await MyDFSToken.new({from: accounts[0]});
+		var instance = await GenericCrowdsale.new(accounts[1], token.address);
+		await token.transfer(instance.address, 11500, {from : accounts[0]});
+		await instance.ico(1, 2, 3, 1e3, [], []);
+
+		var investor = accounts[2];
+		await web3.eth.sendTransaction({
+		    from: investor,
+		    to: instance.address,
+		    value: web3.toWei(5),
+		    gas: 5000000
+		});
+		await sleep(3000);
+
+		boughtTokens = await token.balanceOf(investor);
+		assert.equal(boughtTokens.toNumber(), 2000);
+
+		await instance.claimBonus({from: investor, gas: 5000000});
+		boughtTokens = await token.balanceOf(investor);
+		assert.equal(boughtTokens.toNumber(), 2284);
+	});
 });
 
 //test test/ICOTest.js

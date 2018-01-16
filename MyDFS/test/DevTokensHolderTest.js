@@ -73,7 +73,7 @@ contract('DevTokensHolder', function(accounts){
 		await token.transfer(devTokensHolder.address, totalSupply.mul(0.05), {from : addressOwner});
 
 		//run and success ICo
-        await crowdsale.ico(1, 10, 2, 1e3, [], [], {from : addressOwner});
+        await crowdsale.ico(1, 10, 2, 1e9, [], [], {from : addressOwner});
 		await web3.eth.sendTransaction({
 		    from: investor,
 		    to: crowdsale.address,

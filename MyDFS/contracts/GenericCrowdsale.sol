@@ -244,6 +244,7 @@ contract GenericCrowdsale is Ownable {
             uint availableAmount = hardFundingGoal.sub(amountRaised);
             msg.sender.transfer(amount.sub(availableAmount));
             amount = availableAmount;
+            Debug(amount);
         }
 
         buyTokens(msg.sender,  amount);
@@ -257,7 +258,7 @@ contract GenericCrowdsale is Ownable {
         address user,
         uint256 amount
     ) internal {
-    	require(amount < hardFundingGoal.sub(amountRaised));
+    	require(amount <= hardFundingGoal.sub(amountRaised));
 
         uint256 count = amount.div(price).add(amount % price > 0 ? 1 : 0);
         uint256 discount = getDiscountOf(count);
