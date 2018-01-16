@@ -17,16 +17,25 @@ contract DevTokensHolder is Ownable {
     event TokensWithdrawn(address holder, uint256 amount);
     event Debug(uint256 amount);
 
-    function DevTokensHolder(address _crowdsale, address _token) public {
+    function DevTokensHolder(address _crowdsale, address _token, address _owner) public {
         crowdsale = GenericCrowdsale(_crowdsale);
         token = MyDFSToken(_token);
+        owner = _owner;
     }
 
-    function tokenFallback(address _from, uint _value, bytes _data) public pure { }
+    function tokenFallback(
+        address _from, 
+        uint _value, 
+        bytes _data
+    ) 
+        public 
+        view 
+    {
+        require(_from == owner || _from == address(crowdsale));
+    }
 
     /// @notice The Dev (Owner) will call this method to extract the tokens
     function collectTokens() public onlyOwner {
-    	require(crowdsale.successed());
         uint256 balance = token.balanceOf(address(this));
         uint256 total = collectedTokens.add(balance);
 

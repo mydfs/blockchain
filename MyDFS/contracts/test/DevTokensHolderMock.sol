@@ -8,8 +8,8 @@ contract DevTokensHolderMock is DevTokensHolder {
 
     uint mock_time;
 
-    function DevTokensHolderMock(address _contribution, address _snt)
-    DevTokensHolder(_contribution, _snt) {
+    function DevTokensHolderMock(address _crowdsale, address _token, address _owner)
+    DevTokensHolder(_crowdsale, _token, _owner) {
         mock_time = now;
     }
 

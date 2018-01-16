@@ -3,6 +3,7 @@ pragma solidity ^0.4.18;
 import './Ownable.sol';
 import "./SafeMath.sol";
 import "./interface/ERC223_interface.sol";
+import "./DevTokensHolder.sol";
 
 contract GenericCrowdsale is Ownable {
     using SafeMath for uint256;
@@ -45,6 +46,8 @@ contract GenericCrowdsale is Ownable {
     bool emergencyPaused = false;
     //Soft cap reached
     bool softCapReached = false;
+    //vesting wallet
+    DevTokensHolder public devTokensHolder;
     
     //Disconts
     Discount[] public discounts;
@@ -91,7 +94,16 @@ contract GenericCrowdsale is Ownable {
         state = State.Initialized;
     }
 
-    function tokenFallback(address _from, uint _value, bytes _data) public pure { }
+    function tokenFallback(
+        address _from, 
+        uint _value, 
+        bytes _data
+    ) 
+        public 
+        view 
+    {
+        require(_from == owner);
+    }
 
     /**
      * Start PreICO
@@ -167,6 +179,17 @@ contract GenericCrowdsale is Ownable {
     }
 
     /**
+     * Transfer dev tokens to vesting wallet
+     */
+    function sendDevTokens() external onlyOwner returns(address) {
+        require(successed());
+
+        devTokensHolder = new DevTokensHolder(address(this), address(tokenReward), owner);
+        tokenReward.transfer(address(devTokensHolder), 50 * 1e6);
+        return address(devTokensHolder);
+    }
+
+    /**
      * Admin can withdraw ether beneficiary address
      */
     function withdrawFunding() external onlyOwner {
@@ -175,7 +198,7 @@ contract GenericCrowdsale is Ownable {
     }
 
     /**
-     * Вifferent coins purchase
+     * Different coins purchase
      */
     function foreignPurchase(address user, uint256 amount)
         external
