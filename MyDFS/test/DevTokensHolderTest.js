@@ -15,7 +15,7 @@ contract('DevTokensHolder', function(accounts){
 		var token = await MyDFSToken.new({from : addressOwner});
 		var crowdsale = await GenericCrowdsale.new(addressOwner, token.address);
 		await token.transfer(crowdsale.address, 11500, {from : addressOwner});
-		await crowdsale.ICO(10, 100, 3600, 1e3, [], []);
+		await crowdsale.ico(10, 100, 3600, 1e3, [], []);
 
 		try{
 			var devTokensHolder = await DevTokensHolder.new(crowdsale.address, token.address, {from : addressOwner});
@@ -40,7 +40,7 @@ contract('DevTokensHolder', function(accounts){
 		await token.transfer(devTokensHolder.address, totalSupply.mul(0.05), {from : addressOwner});
 
 		//run and success ICo
-        await crowdsale.ICO(1, 10, 2, 1e3, [], [], {from : addressOwner});
+        await crowdsale.ico(1, 10, 2, 1e3, [], [], {from : addressOwner});
 		await web3.eth.sendTransaction({
 		    from: investor,
 		    to: crowdsale.address,
@@ -73,7 +73,7 @@ contract('DevTokensHolder', function(accounts){
 		await token.transfer(devTokensHolder.address, totalSupply.mul(0.05), {from : addressOwner});
 
 		//run and success ICo
-        await crowdsale.ICO(1, 10, 2, 1e3, [], [], {from : addressOwner});
+        await crowdsale.ico(1, 10, 2, 1e3, [], [], {from : addressOwner});
 		await web3.eth.sendTransaction({
 		    from: investor,
 		    to: crowdsale.address,

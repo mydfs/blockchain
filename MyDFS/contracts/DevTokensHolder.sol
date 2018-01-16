@@ -6,7 +6,6 @@ import "./MyDFSToken.sol";
 import './Ownable.sol';
 import "./SafeMath.sol";
 
-
 contract DevTokensHolder is Ownable {
 	using SafeMath for uint256;
 
@@ -22,6 +21,8 @@ contract DevTokensHolder is Ownable {
         crowdsale = GenericCrowdsale(_crowdsale);
         token = MyDFSToken(_token);
     }
+
+    function tokenFallback(address _from, uint _value, bytes _data) public pure { }
 
     /// @notice The Dev (Owner) will call this method to extract the tokens
     function collectTokens() public onlyOwner {

@@ -1,167 +1,82 @@
 var MyDFSToken = artifacts.require("MyDFSToken");
 
 contract('MyDFSToken', function(accounts){
-	it("Owner should have 100000 tokens initially", function(){
-		return MyDFSToken.deployed().then(function(instance){
-			return instance.balanceOf.call(accounts[0]);
-		}).then(function(balance){
-			assert.equal(balance.valueOf(), 100000, "Owner should have 100000 tokens initially");
-		});
+	it("Owner should have 100000 tokens initially", async function(){
+		var token = await MyDFSToken.new();
+		var balance = await token.balanceOf.call(accounts[0]);
+		assert.equal(balance.toNumber(), 1 * 1e9, "Owner should have 100000 tokens initially");
 	});
 
-	it("should send coin correctly", function() {
-	    var token;
+	it("should send coin correctly", async function() {
+	    var token = await MyDFSToken.new();
 
 	    // Get initial balances of first and second account.
 	    var account_one = accounts[0];
 	    var account_two = accounts[1];
-
-	    var one_starting_balance;
-	    var two_starting_balance;
-	    var one_ending_balance;
-	    var two_ending_balance;
-
 	    var amount = 10000;
 
-	    return MyDFSToken.deployed().then(function(instance) {
-	    	token = instance;
-	    	return token.balanceOf.call(account_one);
-	    }).then(function(balance) {
-	    	one_starting_balance = balance.toNumber();
-	    	return token.balanceOf.call(account_two);
-	    }).then(function(balance) {
-	    	two_starting_balance = balance.toNumber();
-	    	return token.transfer(account_two, amount, {from: account_one});
-	    }).then(function() {
-	    	return token.balanceOf.call(account_one);
-	    }).then(function(balance) {
-	    	one_ending_balance = balance.toNumber();
-	    	return token.balanceOf.call(account_two);
-	    }).then(function(balance) {
-	    	two_ending_balance = balance.toNumber();
+    	var one_starting_balance = await token.balanceOf.call(account_one);
+    	var two_starting_balance = await token.balanceOf.call(account_two);
+    	
+    	await token.transfer(account_two, amount, {from: account_one});
+    	
+    	var one_ending_balance = await token.balanceOf.call(account_one);
+    	var two_ending_balance = await token.balanceOf.call(account_two);
 
-	    	assert.equal(one_ending_balance, one_starting_balance - amount, "first should have balance - <amount> tokens");
-	    	assert.equal(two_ending_balance, two_starting_balance + amount, "second should have balance + <amount> tokens");
-	    });
+    	assert.equal(one_ending_balance.toNumber(), one_starting_balance.toNumber() - amount, "first should have balance - <amount> tokens");
+    	assert.equal(two_ending_balance.toNumber(), two_starting_balance.toNumber() + amount, "second should have balance + <amount> tokens");
 	});
 
-	it("should increase allowance correctly", function() {
-	    var token;
+	it("should increase allowance correctly", async function() {
+	    var token = await MyDFSToken.new();
 
 	    // Get initial balances of first and second account.
 	    var account_one = accounts[0];
 	    var account_two = accounts[2];
-
-	    var one_starting_balance;
-	    var two_starting_balance;
-	    var one_ending_balance;
-	    var two_ending_balance;
-
 	    var amount = 10000;
 
-	    return MyDFSToken.deployed().then(function(instance) {
-	    	token = instance;
-	    	return token.balanceOf.call(account_one);
-	    }).then(function(balance) {
-	    	one_starting_balance = balance.toNumber();
-	    	return token.balanceOf.call(account_two);
-	    }).then(function(balance) {
-	    	two_starting_balance = balance.toNumber();
-	    	return token.increaseApproval(account_two, amount, {from: account_one});
-	    }).then(function() {
-	    	return token.allowance.call(account_one, account_two);
-	    }).then(function(allowance) {
-	    	assert(allowance.valueOf(), amount, "allowance is <amount> tokens");
-	    	return token.transferFrom(account_one, account_two, amount, {from: account_two});
-	    }).then(function() {
-	    	return token.balanceOf.call(account_one);
-	    }).then(function(balance) {
-	    	one_ending_balance = balance.toNumber();
-	    	return token.balanceOf.call(account_two);
-	    }).then(function(balance) {
-	    	two_ending_balance = balance.toNumber();
+    	var one_starting_balance = await token.balanceOf.call(account_one);
+    	var two_starting_balance = await token.balanceOf.call(account_two);
 
-	    	assert.equal(one_ending_balance, one_starting_balance - amount, "first should have balance - <amount> tokens");
-	    	assert.equal(two_ending_balance, two_starting_balance + amount, "second should have balance + <amount> tokens");
-	    });
+    	await token.increaseApproval(account_two, amount, {from: account_one});
+
+    	var allowance = await token.allowance.call(account_one, account_two);
+    	assert(allowance.toNumber(), amount, "allowance is <amount> tokens");
+    	
+    	await token.transferFrom(account_one, account_two, amount, {from: account_two});
+    	var one_ending_balance = await token.balanceOf.call(account_one);
+    	var two_ending_balance = await token.balanceOf.call(account_two);
+
+    	assert.equal(one_ending_balance.toNumber(), one_starting_balance.toNumber() - amount, "first should have balance - <amount> tokens");
+    	assert.equal(two_ending_balance.toNumber(), two_starting_balance.toNumber() + amount, "second should have balance + <amount> tokens");
 	});
 
-	it("should denied overhead allowance correctly", function() {
-	    var token;
+	it("should denied overhead allowance correctly", async function() {
+	    var token = await MyDFSToken.new();
 
 	    // Get initial balances of first and second account.
 	    var account_one = accounts[0];
 	    var account_two = accounts[2];
-
-	    var one_starting_balance;
-	    var two_starting_balance;
-	    var one_ending_balance;
-	    var two_ending_balance;
-
 	    var amount = 10000;
 
-	    return MyDFSToken.deployed().then(function(instance) {
-	    	token = instance;
-	    	return token.balanceOf.call(account_one);
-	    }).then(function(balance) {
-	    	one_starting_balance = balance.toNumber();
-	    	return token.balanceOf.call(account_two);
-	    }).then(function(balance) {
-	    	two_starting_balance = balance.toNumber();
-	    	return token.increaseApproval(account_two, amount, {from: account_one});
-	    }).then(function() {
-	    	return token.transferFrom(account_one, account_two, amount + 1, {from: account_two});
-	    }).then(function() {
-	    	return token.balanceOf.call(account_one);
-	    }).then(function(balance) {
-	    	one_ending_balance = balance.toNumber();
-	    	return token.balanceOf.call(account_two);
-	    }).then(function(balance) {
-	    	two_ending_balance = balance.toNumber();
+    	var one_starting_balance = await token.balanceOf.call(account_one);
+    	var two_starting_balance = await token.balanceOf.call(account_two);
 
-	    	assert.equal(one_ending_balance, one_starting_balance, "first should have balance without changes");
-	    	assert.equal(two_ending_balance, two_starting_balance, "second should have balance without changes");
-	    });
-	});
+    	await token.increaseApproval(account_two, amount, {from: account_one});
 
-	it("should decrease allowance correctly", function() {
-	    var token;
+    	var allowance = await token.allowance.call(account_one, account_two);
+    	assert(allowance.toNumber(), amount, "allowance is <amount> tokens");
+    	
+    	try{
+    		await token.transferFrom(account_one, account_two, amount + 1, {from: account_two});
+    		assert.fail("Create should throw error");
+    	}  catch(error) {
+            assert.ok(true);
+        }
+    	var one_ending_balance = await token.balanceOf.call(account_one);
+    	var two_ending_balance = await token.balanceOf.call(account_two);
 
-	    // Get initial balances of first and second account.
-	    var account_one = accounts[0];
-	    var account_two = accounts[2];
-
-	    var one_starting_balance;
-	    var two_starting_balance;
-	    var one_ending_balance;
-	    var two_ending_balance;
-
-	    var amount = 10000;
-
-	    return MyDFSToken.deployed().then(function(instance) {
-	    	token = instance;
-	    	return token.balanceOf.call(account_one);
-	    }).then(function(balance) {
-	    	one_starting_balance = balance.toNumber();
-	    	return token.balanceOf.call(account_two);
-	    }).then(function(balance) {
-	    	two_starting_balance = balance.toNumber();
-	    	return token.decreaseApproval(account_two, amount, {from: account_one});
-	    }).then(function() {
-	    	return token.allowance.call(account_one, account_two);
-	    }).then(function(allowance) {
-	    	assert(allowance.valueOf(), amount, "allowance is 0 tokens");
-	    	return token.transferFrom(account_one, account_two, amount, {from: account_two});
-	    }).then(function() {
-	    	return token.balanceOf.call(account_one);
-	    }).then(function(balance) {
-	    	one_ending_balance = balance.toNumber();
-	    	return token.balanceOf.call(account_two);
-	    }).then(function(balance) {
-	    	two_ending_balance = balance.toNumber();
-
-	    	assert.equal(one_ending_balance, one_starting_balance, "first should have balance without changes");
-	    	assert.equal(two_ending_balance, two_starting_balance, "second should have balance without changes");
-	    });
+    	assert.equal(one_ending_balance.toNumber(), one_starting_balance.toNumber(), "first should have balance without changes");
+    	assert.equal(two_ending_balance.toNumber(), two_starting_balance.toNumber(), "second should have balance without changes");
 	});
 });

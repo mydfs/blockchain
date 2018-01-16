@@ -1,8 +1,8 @@
 pragma solidity ^0.4.18;
 
-import './interface/Token.sol';
 import './Ownable.sol';
 import "./SafeMath.sol";
+import "./interface/ERC223_interface.sol";
 
 contract GenericCrowdsale is Ownable {
     using SafeMath for uint256;
@@ -37,7 +37,7 @@ contract GenericCrowdsale is Ownable {
     //price for 1 token in Wei
     uint public price;
     //Token cantract
-    Token public tokenReward;
+    ERC223 public tokenReward;
     //Wei balances for refund if ICO failed
     mapping(address => uint256) public balances;
 
@@ -87,9 +87,11 @@ contract GenericCrowdsale is Ownable {
         require(ifSuccessfulSendTo != address(0) 
             && addressOfTokenUsedAsReward != address(0));
         beneficiary = ifSuccessfulSendTo;
-        tokenReward = Token(addressOfTokenUsedAsReward);
+        tokenReward = ERC223(addressOfTokenUsedAsReward);
         state = State.Initialized;
     }
+
+    function tokenFallback(address _from, uint _value, bytes _data) public pure { }
 
     /**
      * Start PreICO
