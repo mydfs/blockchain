@@ -1,15 +1,14 @@
-pragma solidity ^0.4.16;
+pragma solidity ^0.4.18;
 
 
 import "./GenericCrowdsale.sol";
 import "./MyDFSToken.sol";
+import './Ownable.sol';
 import "./SafeMath.sol";
 
-
-contract DevTokensHolder {
+contract DevTokensHolder is Ownable {
 	using SafeMath for uint256;
 
-	address public owner;
     uint256 collectedTokens;
     GenericCrowdsale crowdsale;
     MyDFSToken token;
@@ -18,22 +17,29 @@ contract DevTokensHolder {
     event TokensWithdrawn(address holder, uint256 amount);
     event Debug(uint256 amount);
 
-    modifier verified() { require(msg.sender == owner); _; }
-
-    function DevTokensHolder(address _crowdsale, address _token) {
-        owner = msg.sender;
+    function DevTokensHolder(address _crowdsale, address _token, address _owner) public {
         crowdsale = GenericCrowdsale(_crowdsale);
         token = MyDFSToken(_token);
+        owner = _owner;
     }
 
+    function tokenFallback(
+        address _from, 
+        uint _value, 
+        bytes _data
+    ) 
+        public 
+        view 
+    {
+        require(_from == owner || _from == address(crowdsale));
+    }
 
     /// @notice The Dev (Owner) will call this method to extract the tokens
-    function collectTokens() public verified {
-    	require(crowdsale.successed());
+    function collectTokens() public onlyOwner {
         uint256 balance = token.balanceOf(address(this));
         uint256 total = collectedTokens.add(balance);
 
-        uint256 finalizedTime = crowdsale.deadline();
+        uint256 finalizedTime = crowdsale.finishTime();
         require(finalizedTime > 0 && getTime() > finalizedTime);
 
         uint256 canExtract = total.mul(getTime().sub(finalizedTime)).div(months(12));
@@ -44,22 +50,17 @@ contract DevTokensHolder {
         }
 
         collectedTokens = collectedTokens.add(canExtract);
-        assert(token.transfer(owner, canExtract));
+        require(token.transfer(owner, canExtract));
         TokensWithdrawn(owner, canExtract);
     }
 
-    function months(uint256 m) internal returns (uint256) {
+    function months(uint256 m) internal pure returns (uint256) {
         return m.mul(30 days);
     }
 
-    function getTime() internal returns (uint256) {
+    function getTime() internal view returns (uint256) {
         return now;
     }
-
-	/**
-     * Token fallback
-     */
-    function tokenFallback(address from, uint value) { }
 
     //////////
     // Safety Methods
@@ -69,14 +70,14 @@ contract DevTokensHolder {
     ///  sent tokens to this contract.
     /// @param _token The address of the token contract that you want to recover
     ///  set to 0 in case you want to extract ether.
-    function claimTokens(address _token) public verified {
+    function claimTokens(address _token) public onlyOwner {
         require(_token != address(token));
         if (_token == 0x0) {
             owner.transfer(this.balance);
             return;
         }
 
-        MyDFSToken token = MyDFSToken(_token);
+        token = MyDFSToken(_token);
         uint256 balance = token.balanceOf(this);
         token.transfer(owner, balance);
         ClaimedTokens(_token, balance);
