@@ -1,17 +1,14 @@
-pragma solidity ^0.4.16;
+pragma solidity ^0.4.18;
 
-import './interface/Token.sol';
+import './Ownable.sol';
+import './MyDFSToken.sol';
 import './interface/Stats.sol';
 import './interface/Broker.sol';
 import './interface/BalanceManager.sol';
-import './interface/ERC223ReceivingContract.sol';
-import './Game.sol';
 
-contract Dispatcher is BalanceManager, ERC223ReceivingContract {
+contract Dispatcher is BalanceManager, Ownable {
 
-	address public service;
-
-	Token public gameToken;
+	MyDFSToken public gameToken;
 	Stats public stats;
 	Broker public broker;
 
@@ -21,16 +18,11 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 
 	uint32 max_id = 0;
 
-	modifier owned() { require(msg.sender == service); _; }
-	
 	event GameCreated(address game);
 
-	function Dispatcher(
-		address gameTokenAddress
-	) public {
+	function Dispatcher(address gameTokenAddress) public {
 		require(gameTokenAddress > 0);
-		service = msg.sender;
-		gameToken = Token(gameTokenAddress);
+		gameToken = MyDFSToken(gameTokenAddress);
 	}
 
 	function registerUser(
@@ -38,25 +30,21 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		uint32 id
 	) 
 		external
-		owned
+		onlyOwner
 	{
 		users[user] = id;
 	}
 
-	function setUserStats(
-		address statsAddress
-	)
+	function setUserStats(address statsAddress)
 		external
-		owned
+		onlyOwner
 	{
 		stats = Stats(statsAddress);
 	}
 
-	function setBroker(
-		address brokerAddress
-	) 
+	function setBroker(address brokerAddress) 
 		external
-		owned
+		onlyOwner
 	{
 		broker = Broker(brokerAddress);
 	}
@@ -67,21 +55,11 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		uint8 serviceFeeValue
 	)
 		external
-		owned
+		onlyOwner
 		returns (address)
 	{
 		require(id != 0x0);
-		Game game = new Game(
-			address(gameToken),
-			address(stats),
-			address(broker),
-			service,
-			address(this),
-			gameEntryValue,
-			serviceFeeValue);
-		stats.approve(address(game));
-		GameCreated(address(game));
-		games[id] = address(game);
+		
 	}
 
 	function addParticipants(
@@ -89,17 +67,9 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		address game
 	)
 		external
-		owned
+		onlyOwner
 	{
-		Game gameInstance = Game(game);
- 		uint32 gameEntry = gameInstance.gameEntry();
-
-		for (uint256 i = 0; i < users.length; i++) {
-			uint32 userId = users[i];
-			require(balanceOf(userId) >= gameEntry && gameToken.transfer(game, gameEntry));
- 			balances[userId] -= gameEntry;
-            gameInstance.addParticipant(userId);
-        }
+		
 	}
 
 	function startGame(
@@ -107,19 +77,16 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		string hash
 	)
 		external
-		owned
+		onlyOwner
 	{
-		Game(game).startGame();
-		Game(game).setParticipantsHash(hash);
+		
 	}
 
-	function cancelGame(
-		address game
-	) 
+	function cancelGame(address game) 
 		external
-		owned 
+		onlyOwner 
 	{
-		Game(game).cancelGame();
+		
 	}
 
 	function finishGame(
@@ -127,10 +94,9 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		string hash
 	)
 		external
-		owned
+		onlyOwner
 	{
-		Game(game).finishGame();
-		Game(game).setEventsHash(hash);
+		
 	}
 
 	function tokenFallback(
@@ -144,11 +110,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		balances[userId] += uint32(value);
 	}
 
-	function deposit(
-		uint32 sum
-	) 
-		external 
-	{
+	function deposit(uint32 sum) external {
 		require(gameToken.balanceOf(msg.sender) >= sum); 
 		if (gameToken.transferFrom(msg.sender, address(this), sum)) {
 			uint32 userId = users[msg.sender];
@@ -169,11 +131,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		}	
 	}
 
-	function withdraw(
-		uint32 sum
-	)
-		external
-	{
+	function withdraw(uint32 sum) external {
 		uint32 userId = users[msg.sender];
 		require(balances[userId] >= sum);
 		if (gameToken.transfer(msg.sender, sum)) {
@@ -181,9 +139,7 @@ contract Dispatcher is BalanceManager, ERC223ReceivingContract {
 		}
 	}
 
-	function balanceOf(
-		uint32 userId
-	)
+	function balanceOf(uint32 userId)
 		public
 		constant
 		returns (uint32)

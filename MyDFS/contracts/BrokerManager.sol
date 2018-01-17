@@ -1,6 +1,6 @@
 pragma solidity ^0.4.16;
 
-import './interface/Token.sol';
+import './MyDFSToken.sol';
 import './interface/Stats.sol';
 import './interface/Broker.sol';
 
@@ -17,7 +17,7 @@ contract BrokerManager is Broker {
 
 	mapping (address => mapping (address => Term)) userBrokers;
 
-	Token token;
+	MyDFSToken token;
 	Stats stats;
 
 	function BrokerManager (
@@ -26,7 +26,7 @@ contract BrokerManager is Broker {
 	) 
 		public
 	{
-		token = Token(tokenAddress);
+		token = MyDFSToken(tokenAddress);
 		stats = Stats(statsAddress);
 	}
 
