@@ -8,14 +8,8 @@ contract('DispatcherTest', function(accounts){
 		var gameId = 1;
 		var token = await MyDFSToken.new();
 		var dispatcher = await DispatcherTest.new(token.address);
-
-		for (var i = 1; i <= 10; i++) {
-			await dispatcher.registerUser(i, i);
-		}
 		
-		var gasUsed = await dispatcher.createGame(gameId, 2, 5);
-		console.log(gasUsed);
-		gasUsed = await dispatcher.participateGame(gameId, [1,2,3,4,5,6,7,8,9,10], [1,2,3,4,5,6,7,8,9,10], [0,0,0,0,0,0,0,0,0,0]);
+		var gasUsed = await dispatcher.createGame(gameId, 2, 5, 1932848);
 		console.log(gasUsed);
 		await dispatcher.startGame(gameId, 'bc6dc48b743dc5d013b1abaebd2faed2');
 		try {
