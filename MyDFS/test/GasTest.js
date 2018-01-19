@@ -15,7 +15,7 @@ contract('DispatcherTest', function(accounts){
 		
 		var gasUsed = await dispatcher.createGame(gameId, 2, 5);
 		console.log(gasUsed);
-		gasUsed = await dispatcher.participateGame([1,2,3,4,5,6,7,8,9,10], gameId);
+		gasUsed = await dispatcher.participateGame(gameId, [1,2,3,4,5,6,7,8,9,10], [1,2,3,4,5,6,7,8,9,10], [0,0,0,0,0,0,0,0,0,0]);
 		console.log(gasUsed);
 		await dispatcher.startGame(gameId, 'bc6dc48b743dc5d013b1abaebd2faed2');
 		try {
