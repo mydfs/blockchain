@@ -1,9 +1,8 @@
 pragma solidity ^0.4.18;
 
 import './Ownable.sol';
-import './MyDFSToken.sol';
 
-contract DispatcherTest is Ownable {
+contract Arbitrator is Ownable {
 
     enum State { Initialized, Started, Finished, Cancelled }
 
@@ -14,17 +13,24 @@ contract DispatcherTest is Ownable {
 		uint32 registrationDueDate;
 	}
 
-	MyDFSToken public gameToken;
-
 	mapping (uint32 => Game) games;
 
     /**
      * Constrctor function
      */
-	function DispatcherTest(address _gameTokenAddress) public {
+	function Arbitrator(address _gameTokenAddress) public {
 		require(_gameTokenAddress > 0);
-		gameToken = MyDFSToken(_gameTokenAddress);
 	}
+
+	function tokenFallback(
+        address _from, 
+        uint _value, 
+        bytes _data
+    ) 
+        public 
+        view 
+    {
+    }
 
 	/**
      * Create new game
@@ -84,5 +90,9 @@ contract DispatcherTest is Ownable {
 		);
 		
 		game.state = State.Finished;
+	}
+
+	function withdraw(address _user, uint32 sum) external onlyOwner {
+		
 	}
 }
