@@ -26,7 +26,7 @@ contract StandardToken is ERC223 {
             return transferToAddress(_to, _value, _data);
         }
     }
-      
+    
 
     // Function that is called when a user or another contract wants to transfer funds .
     function transfer(address _to, uint _value, bytes _data) public returns (bool success) {

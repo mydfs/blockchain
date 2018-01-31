@@ -185,7 +185,7 @@ contract GenericCrowdsale is Ownable {
         require(successed());
 
         devTokensHolder = new DevTokensHolder(address(this), address(tokenReward), owner);
-        tokenReward.transfer(address(devTokensHolder), 50 * 1e6);
+        tokenReward.transfer(address(devTokensHolder), 50 * 1e12);
         return address(devTokensHolder);
     }
 
