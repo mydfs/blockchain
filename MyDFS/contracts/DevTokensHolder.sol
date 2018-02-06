@@ -40,7 +40,7 @@ contract DevTokensHolder is Ownable {
         uint256 total = collectedTokens.add(balance);
 
         uint256 finalizedTime = crowdsale.finishTime();
-        require(finalizedTime > 0 && getTime() > finalizedTime);
+        require(finalizedTime > 0 && getTime() > finalizedTime.add(14 days));
 
         uint256 canExtract = total.mul(getTime().sub(finalizedTime)).div(months(12));
         canExtract = canExtract.sub(collectedTokens);
