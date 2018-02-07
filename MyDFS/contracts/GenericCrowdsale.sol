@@ -4,6 +4,7 @@ import './Ownable.sol';
 import "./SafeMath.sol";
 import "./interface/ERC223_interface.sol";
 import "./DevTokensHolder.sol";
+import "./GrowthTokensHolder.sol";
 
 contract GenericCrowdsale is Ownable {
     using SafeMath for uint256;
@@ -46,8 +47,10 @@ contract GenericCrowdsale is Ownable {
     bool emergencyPaused = false;
     //Soft cap reached
     bool softCapReached = false;
-    //vesting wallet
+    //dev holder
     DevTokensHolder public devTokensHolder;
+    //growth holder
+    GrowthTokensHolder public growthTokensHolder;
     
     //Disconts
     Discount[] public discounts;
@@ -187,6 +190,17 @@ contract GenericCrowdsale is Ownable {
         devTokensHolder = new DevTokensHolder(address(this), address(tokenReward), owner);
         tokenReward.transfer(address(devTokensHolder), 50 * 1e12);
         return address(devTokensHolder);
+    }
+
+    /**
+     * Transfer dev tokens to vesting wallet
+     */
+    function sendGrowthTokens() external onlyOwner returns(address) {
+        require(successed());
+
+        growthTokensHolder = new GrowthTokensHolder(address(this), address(tokenReward), owner);
+        tokenReward.transfer(address(growthTokensHolder), 150 * 1e12);
+        return address(growthTokensHolder);
     }
 
     /**
