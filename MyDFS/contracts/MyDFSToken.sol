@@ -5,7 +5,7 @@ import './StandardToken.sol';
 contract MyDFSToken is StandardToken {
 
     string public name = "MyDFS Token";
-    uint8 public decimals = 18;
+    uint8 public decimals = 6;
     string public symbol = "MyDFS";
     string public version = 'H1.0';
     uint256 public totalSupply;
@@ -15,7 +15,7 @@ contract MyDFSToken is StandardToken {
     } 
 
     function MyDFSToken() public {
-        totalSupply = 1 * 1e9;
+        totalSupply = 1 * 1e15;
         balances[msg.sender] = totalSupply;
     }
 

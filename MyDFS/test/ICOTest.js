@@ -364,7 +364,7 @@ contract('GenericCrowdsale', function(accounts){
 	it("send dev tokens", async function() {
 		var token = await MyDFSToken.new();
 		var instance = await GenericCrowdsale.new(accounts[1], token.address);
-		await token.transfer(instance.address, 850 * 1e6);
+		await token.transfer(instance.address, 1 * 1e15);
 		await instance.ico(1, 10, 3, 5, [], []);
 
 		try{
@@ -385,9 +385,38 @@ contract('GenericCrowdsale', function(accounts){
 		await sleep(3000);
 
 		await instance.sendDevTokens();
-		var devTokensHolderAddress = await instance.devTokensHolder();
-		dev_tokens_balance = await token.balanceOf(devTokensHolderAddress.valueOf());
-		assert.equal(dev_tokens_balance.toNumber(), 50 * 1e6);
+		var tokensHolderAddress = await instance.devTokensHolder();
+		dev_tokens_balance = await token.balanceOf(tokensHolderAddress.valueOf());
+		assert.equal(dev_tokens_balance.toNumber(), 100 * 1e12);
+	});
+
+	it("send growth tokens", async function() {
+		var token = await MyDFSToken.new();
+		var instance = await GenericCrowdsale.new(accounts[1], token.address);
+		await token.transfer(instance.address, 1 * 1e15);
+		await instance.ico(1, 10, 3, 5, [], []);
+
+		try{
+			await instance.sendGrowthTokens({from: accounts[0]});
+			assert.fail("Send growth tokens before ICO success should throw error");
+		}  catch(error) {
+            assert.ok(true);
+        }
+
+		var investor = accounts[2];
+		await web3.eth.sendTransaction({
+		    from: investor,
+		    to: instance.address,
+		    value: web3.toWei(2),
+		    gas: 5000000
+		});
+
+		await sleep(3000);
+
+		await instance.sendGrowthTokens();
+		var tokensHolderAddress = await instance.growthTokensHolder();
+		dev_tokens_balance = await token.balanceOf(tokensHolderAddress.valueOf());
+		assert.equal(dev_tokens_balance.toNumber(), 100 * 1e12);
 	});
 });
 

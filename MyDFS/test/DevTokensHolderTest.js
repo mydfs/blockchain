@@ -15,7 +15,7 @@ contract('DevTokensHolder', function(accounts){
 		var token = await MyDFSToken.new();
 		const totalSupply = await token.totalSupply();
 		var crowdsale = await GenericCrowdsale.new(accounts[1], token.address);
-		await token.transfer(crowdsale.address, totalSupply.mul(0.95));
+		await token.transfer(crowdsale.address, totalSupply.mul(0.9));
 		await crowdsale.ico(1, 10, 3, 5, [], []);
 
 		try{
@@ -33,7 +33,7 @@ contract('DevTokensHolder', function(accounts){
 		});
 
 		var devTokensHolder = await DevTokensHolder.new(crowdsale.address, token.address, accounts[0]);
-		await token.transfer(devTokensHolder.address, totalSupply.mul(0.05));
+		await token.transfer(devTokensHolder.address, totalSupply.mul(0.1));
 
 		//change current time to 3 month later
 		var deadline = await crowdsale.deadline();
@@ -42,18 +42,18 @@ contract('DevTokensHolder', function(accounts){
         await devTokensHolder.collectTokens();
         const balance = await token.balanceOf(addressOwner);
 
-        const calcTokens = web3.fromWei(totalSupply.mul(0.05).mul(0.25)).toNumber();
+        const calcTokens = web3.fromWei(totalSupply.mul(0.1).mul(0.25)).toNumber();
         const realTokens = web3.fromWei(balance).toNumber();
 
         assert.equal(realTokens, calcTokens);
     });
 
-    it("Allows devs to extract everything after 12 months", async function() {
+    it("Disallows devs from transfering before 14 days have past", async function() {
 		var token = await MyDFSToken.new();
 		const totalSupply = await token.totalSupply();
 		var crowdsale = await GenericCrowdsale.new(accounts[1], token.address);
 
-		await token.transfer(crowdsale.address, totalSupply.mul(0.95));
+		await token.transfer(crowdsale.address, totalSupply.mul(0.9));
 		await crowdsale.ico(1, 10, 3, 5, [], []);
 		await web3.eth.sendTransaction({
 		    from: investor,
@@ -63,7 +63,37 @@ contract('DevTokensHolder', function(accounts){
 		});
 
 		var devTokensHolder = await DevTokensHolder.new(crowdsale.address, token.address, accounts[0]);
-		await token.transfer(devTokensHolder.address, totalSupply.mul(0.05));
+		await token.transfer(devTokensHolder.address, totalSupply.mul(0.1));
+
+		//change current time to 13 days later
+		var deadline = await crowdsale.deadline();
+		const t = deadline.toNumber() + (86400 * 13);
+        await devTokensHolder.setMockedTime(t);
+
+        try{
+        	await devTokensHolder.collectTokens({from: addressOwner});
+        	assert.fail("Send dev tokens before 14 days should throw error");
+		}  catch(error) {
+            assert.ok(true);
+        }
+    });
+
+    it("Allows devs to extract everything after 12 months", async function() {
+		var token = await MyDFSToken.new();
+		const totalSupply = await token.totalSupply();
+		var crowdsale = await GenericCrowdsale.new(accounts[1], token.address);
+
+		await token.transfer(crowdsale.address, totalSupply.mul(0.9));
+		await crowdsale.ico(1, 10, 3, 5, [], []);
+		await web3.eth.sendTransaction({
+		    from: investor,
+		    to: crowdsale.address,
+		    value: web3.toWei(3),
+		    gas: 5000000
+		});
+
+		var devTokensHolder = await DevTokensHolder.new(crowdsale.address, token.address, accounts[0]);
+		await token.transfer(devTokensHolder.address, totalSupply.mul(0.1));
 
 		//change current time to 12 month later
 		var deadline = await crowdsale.deadline();
@@ -72,7 +102,7 @@ contract('DevTokensHolder', function(accounts){
         await devTokensHolder.collectTokens({from: addressOwner});
         const balance = await token.balanceOf(addressOwner);
 
-        const calcTokens = web3.fromWei(totalSupply.mul(0.05)).toNumber();
+        const calcTokens = web3.fromWei(totalSupply.mul(0.1)).toNumber();
         const realTokens = web3.fromWei(balance).toNumber();
 
         assert.equal(realTokens, calcTokens);

@@ -6,18 +6,16 @@ import "./MyDFSToken.sol";
 import './Ownable.sol';
 import "./SafeMath.sol";
 
-contract DevTokensHolder is Ownable {
+contract GrowthTokensHolder is Ownable {
 	using SafeMath for uint256;
 
-    uint256 collectedTokens;
     GenericCrowdsale crowdsale;
     MyDFSToken token;
 
     event ClaimedTokens(address token, uint256 amount);
     event TokensWithdrawn(address holder, uint256 amount);
-    event Debug(uint256 amount);
 
-    function DevTokensHolder(address _crowdsale, address _token, address _owner) public {
+    function GrowthTokensHolder(address _crowdsale, address _token, address _owner) public {
         crowdsale = GenericCrowdsale(_crowdsale);
         token = MyDFSToken(_token);
         owner = _owner;
@@ -37,25 +35,13 @@ contract DevTokensHolder is Ownable {
     /// @notice The Dev (Owner) will call this method to extract the tokens
     function collectTokens() public onlyOwner {
         uint256 balance = token.balanceOf(address(this));
-        uint256 total = collectedTokens.add(balance);
+        require(balance > 0);
 
         uint256 finalizedTime = crowdsale.finishTime();
         require(finalizedTime > 0 && getTime() > finalizedTime.add(14 days));
 
-        uint256 canExtract = total.mul(getTime().sub(finalizedTime)).div(months(12));
-        canExtract = canExtract.sub(collectedTokens);
-
-        if (canExtract > balance) {
-            canExtract = balance;
-        }
-
-        collectedTokens = collectedTokens.add(canExtract);
-        require(token.transfer(owner, canExtract));
-        TokensWithdrawn(owner, canExtract);
-    }
-
-    function months(uint256 m) internal pure returns (uint256) {
-        return m.mul(30 days);
+        require(token.transfer(owner, balance));
+        TokensWithdrawn(owner, balance);
     }
 
     function getTime() internal view returns (uint256) {
