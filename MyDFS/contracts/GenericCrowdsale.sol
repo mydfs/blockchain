@@ -114,7 +114,7 @@ contract GenericCrowdsale is Ownable {
     function preIco(
         uint hardFundingGoalInEthers,
         uint durationInSeconds,
-        uint szaboCostOfEachToken,
+        uint costOfEachToken,
         uint256[] discountTokenAmount,
         uint256[] discountValues
     ) 
@@ -123,14 +123,14 @@ contract GenericCrowdsale is Ownable {
     {
         require(hardFundingGoalInEthers > 0
             && durationInSeconds > 0
-            && szaboCostOfEachToken > 0
+            && costOfEachToken > 0
             && state == State.Initialized
             && discountTokenAmount.length == discountValues.length);
 
         hardFundingGoal = hardFundingGoalInEthers.mul(1 ether);
         deadline = now.add(durationInSeconds.mul(1 seconds));
         finishTime = deadline;
-        price = szaboCostOfEachToken.mul(1 szabo);
+        price = costOfEachToken;
         initDiscounts(discountTokenAmount, discountValues);
         state = State.PreIco;
     }
@@ -142,7 +142,7 @@ contract GenericCrowdsale is Ownable {
         uint softFundingGoalInEthers,
         uint hardFundingGoalInEthers,
         uint durationInSeconds,
-        uint szaboCostOfEachToken,
+        uint costOfEachToken,
         uint256[] discountTokenAmount,
         uint256[] discountValues
     ) 
@@ -153,7 +153,7 @@ contract GenericCrowdsale is Ownable {
             && hardFundingGoalInEthers > 0
             && hardFundingGoalInEthers > softFundingGoalInEthers
             && durationInSeconds > 0
-            && szaboCostOfEachToken > 0
+            && costOfEachToken > 0
             && state < State.Ico
             && discountTokenAmount.length == discountValues.length);
 
@@ -161,7 +161,7 @@ contract GenericCrowdsale is Ownable {
         hardFundingGoal = hardFundingGoalInEthers.mul(1 ether);
         deadline = now.add(durationInSeconds.mul(1 seconds));
         finishTime = deadline;
-        price = szaboCostOfEachToken.mul(1 szabo);
+        price = costOfEachToken;
         delete discounts;
         initDiscounts(discountTokenAmount, discountValues);
         state = State.Ico;
