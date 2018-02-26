@@ -1,8 +1,8 @@
 const GenericCrowdsale = artifacts.require("GenericCrowdsale");
 const MyDFSToken = artifacts.require("MyDFSToken");
-const GrowthTokensHolder = artifacts.require("GrowthTokensHolderMock");
+const AdvisorsTokensHolder = artifacts.require("AdvisorsTokensHolderMock");
 
-contract('GrowthTokensHolder', function(accounts){
+contract('AdvisorsTokensHolder', function(accounts){
 	const addressOwner = accounts[0];
 	const addressDevs = accounts[2];
 	const investor = accounts[3];
@@ -17,7 +17,7 @@ contract('GrowthTokensHolder', function(accounts){
 		var crowdsale = await GenericCrowdsale.new(accounts[1], token.address);
 
 		await token.transfer(crowdsale.address, totalSupply.mul(0.8));
-		await crowdsale.ico(1, 10, 3, 5, [], []);
+		await crowdsale.ico(1, 10, 3, 1e9, [], []);
 		await web3.eth.sendTransaction({
 		    from: investor,
 		    to: crowdsale.address,
@@ -25,7 +25,7 @@ contract('GrowthTokensHolder', function(accounts){
 		    gas: 5000000
 		});
 
-		var tokensHolder = await GrowthTokensHolder.new(crowdsale.address, token.address, accounts[0]);
+		var tokensHolder = await AdvisorsTokensHolder.new(crowdsale.address, token.address, accounts[0]);
 		await token.transfer(tokensHolder.address, totalSupply.mul(0.1));
 
 		//change current time to 13 days later
@@ -47,7 +47,7 @@ contract('GrowthTokensHolder', function(accounts){
 		var crowdsale = await GenericCrowdsale.new(accounts[1], token.address);
 
 		await token.transfer(crowdsale.address, totalSupply.mul(0.9));
-		await crowdsale.ico(1, 10, 3, 5, [], []);
+		await crowdsale.ico(1, 10, 3, 1e9, [], []);
 		await web3.eth.sendTransaction({
 		    from: investor,
 		    to: crowdsale.address,
@@ -55,7 +55,7 @@ contract('GrowthTokensHolder', function(accounts){
 		    gas: 5000000
 		});
 
-		var tokensHolder = await GrowthTokensHolder.new(crowdsale.address, token.address, accounts[0]);
+		var tokensHolder = await AdvisorsTokensHolder.new(crowdsale.address, token.address, accounts[0]);
 		await token.transfer(tokensHolder.address, totalSupply.mul(0.1));
 
 		//change current time to 15 days later
@@ -73,4 +73,4 @@ contract('GrowthTokensHolder', function(accounts){
 
 });
 
-//test test/DevTokensHolderTest.js
+//test test/AdvisorsTokensHolderTest.js

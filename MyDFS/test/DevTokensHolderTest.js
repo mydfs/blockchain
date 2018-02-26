@@ -16,7 +16,7 @@ contract('DevTokensHolder', function(accounts){
 		const totalSupply = await token.totalSupply();
 		var crowdsale = await GenericCrowdsale.new(accounts[1], token.address);
 		await token.transfer(crowdsale.address, totalSupply.mul(0.9));
-		await crowdsale.ico(1, 10, 3, 5, [], []);
+		await crowdsale.ico(1, 10, 3, 1e9, [], []);
 
 		try{
 			await crowdsale.sendDevTokens({from: accounts[0]});
@@ -54,7 +54,7 @@ contract('DevTokensHolder', function(accounts){
 		var crowdsale = await GenericCrowdsale.new(accounts[1], token.address);
 
 		await token.transfer(crowdsale.address, totalSupply.mul(0.9));
-		await crowdsale.ico(1, 10, 3, 5, [], []);
+		await crowdsale.ico(1, 10, 3, 1e9, [], []);
 		await web3.eth.sendTransaction({
 		    from: investor,
 		    to: crowdsale.address,
@@ -84,7 +84,7 @@ contract('DevTokensHolder', function(accounts){
 		var crowdsale = await GenericCrowdsale.new(accounts[1], token.address);
 
 		await token.transfer(crowdsale.address, totalSupply.mul(0.9));
-		await crowdsale.ico(1, 10, 3, 5, [], []);
+		await crowdsale.ico(1, 10, 3, 1e9, [], []);
 		await web3.eth.sendTransaction({
 		    from: investor,
 		    to: crowdsale.address,

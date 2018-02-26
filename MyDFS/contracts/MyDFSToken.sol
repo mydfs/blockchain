@@ -15,7 +15,7 @@ contract MyDFSToken is StandardToken {
     } 
 
     function MyDFSToken() public {
-        totalSupply = 1 * 1e15;
+        totalSupply = 125 * 1e12;
         balances[msg.sender] = totalSupply;
     }
 

@@ -1,15 +1,15 @@
 pragma solidity ^0.4.18;
 
-import '../GrowthTokensHolder.sol';
+import '../AdvisorsTokensHolder.sol';
 
 // @dev DevTokensHolderMock mocks current block number
 
-contract GrowthTokensHolderMock is GrowthTokensHolder {
+contract AdvisorsTokensHolderMock is AdvisorsTokensHolder {
 
     uint mock_time;
 
-    function GrowthTokensHolderMock(address _crowdsale, address _token, address _owner)
-    GrowthTokensHolder(_crowdsale, _token, _owner) {
+    function AdvisorsTokensHolderMock(address _crowdsale, address _token, address _owner)
+    AdvisorsTokensHolder(_crowdsale, _token, _owner) {
         mock_time = now;
     }
 

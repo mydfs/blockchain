@@ -6,7 +6,7 @@ import "./MyDFSToken.sol";
 import './Ownable.sol';
 import "./SafeMath.sol";
 
-contract GrowthTokensHolder is Ownable {
+contract AdvisorsTokensHolder is Ownable {
 	using SafeMath for uint256;
 
     GenericCrowdsale crowdsale;
@@ -15,7 +15,7 @@ contract GrowthTokensHolder is Ownable {
     event ClaimedTokens(address token, uint256 amount);
     event TokensWithdrawn(address holder, uint256 amount);
 
-    function GrowthTokensHolder(address _crowdsale, address _token, address _owner) public {
+    function AdvisorsTokensHolder(address _crowdsale, address _token, address _owner) public {
         crowdsale = GenericCrowdsale(_crowdsale);
         token = MyDFSToken(_token);
         owner = _owner;
