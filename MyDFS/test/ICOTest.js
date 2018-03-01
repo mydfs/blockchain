@@ -33,7 +33,7 @@ contract('GenericCrowdsale', function(accounts){
 		var state = await instance.state.call();
 		assert.equal(state.toNumber(), 0);
 
-		await instance.preIco(10, 3, 1e15, [], []);
+		await instance.preIco(10, 1, 1e15, [], []);
 		var state = await instance.state.call();
 		assert.equal(state.toNumber(), 1);
 
@@ -44,7 +44,7 @@ contract('GenericCrowdsale', function(accounts){
 		    value: web3.toWei(3),
 		    gas: 5000000
 		});
-		await sleep(3000);
+		await instance.finishSale();
 
 		boughtTokens = await token.balanceOf(investor);
 		assert.equal(boughtTokens.toNumber(), 4285);
@@ -72,7 +72,7 @@ contract('GenericCrowdsale', function(accounts){
 
 		await instance.ico(1, 3, 10, 1e15, [], []);
 		var state = await instance.state.call();
-		assert.equal(state.toNumber(), 2);
+		assert.equal(state.toNumber(), 3);
 
 		var investor = accounts[2];
 		await web3.eth.sendTransaction({
@@ -81,7 +81,9 @@ contract('GenericCrowdsale', function(accounts){
 		    value: web3.toWei(3),
 		    gas: 5000000
 		});
-		await sleep(3000);
+
+		var state = await instance.state.call();
+		assert.equal(state.toNumber(), 4);
 
 		boughtTokens = await token.balanceOf(investor);
 		assert.equal(boughtTokens.toNumber(), 3000);
@@ -114,7 +116,11 @@ contract('GenericCrowdsale', function(accounts){
 		    gas: 1000000
 		});
 
-		await sleep(3000);
+		await instance.finishSale();
+		
+		var state = await instance.state.call();
+		assert.equal(state.toNumber(), 4);
+		
 		try{
 			await instance.withdrawFunding();
 			assert.fail("withdraw Funding should throw error");
@@ -142,7 +148,7 @@ contract('GenericCrowdsale', function(accounts){
 		    gas: 1000000
 		});
 
-		await sleep(3000);
+		await instance.finishSale();
 		try{
 			await instance.claimRefund({from: investor});
 			assert.fail("withdraw Funding should throw error");
@@ -167,7 +173,7 @@ contract('GenericCrowdsale', function(accounts){
 		    gas: 1000000
 		});
 		
-		await sleep(5000);
+		await instance.finishSale();
 		const start_balance = web3.eth.getBalance(accounts[0]).toNumber();
 		await instance.withdrawFunding();
 		const after_balance = web3.eth.getBalance(accounts[0]).toNumber();
@@ -199,7 +205,6 @@ contract('GenericCrowdsale', function(accounts){
 		    value: web3.toWei(3),
 		    gas: 5000000
 		});
-		await sleep(3000);
 
 		boughtTokens = await token.balanceOf(investor);
 		assert.equal(boughtTokens.toNumber(), 2000);
@@ -225,10 +230,9 @@ contract('GenericCrowdsale', function(accounts){
 		    value: web3.toWei(2),
 		    gas: 5000000
 		});
-
-		await sleep(3000);
-
+		await instance.finishSale();
 		await instance.sendDevTokens();
+
 		var tokensHolderAddress = await instance.devTokensHolder();
 		tokens_balance = await token.balanceOf(tokensHolderAddress.valueOf());
 		assert.equal(tokens_balance.toNumber(), 12500 * 1e9);
@@ -255,9 +259,9 @@ contract('GenericCrowdsale', function(accounts){
 		    gas: 5000000
 		});
 
-		await sleep(3000);
-
+		await instance.finishSale();
 		await instance.sendAdvisorsTokens();
+
 		var tokensHolderAddress = await instance.advisorsTokensHolder();
 		tokens_balance = await token.balanceOf(tokensHolderAddress.valueOf());
 		assert.equal(tokens_balance.toNumber(), 12500 * 1e9);
@@ -297,8 +301,8 @@ contract('GenericCrowdsale', function(accounts){
 		await token.transfer(instance.address, 125 * 1e12);
 		await instance.ico(2, 20, 86400 * 28, 1e15, [3, 1], [20, 5]);
 
-		var deadline = await instance.deadline();
-		const t = deadline.toNumber() - (86400 * 20);
+		var started = await instance.started();
+		const t = started.toNumber() + (86400 * 10);
         await instance.setMockedTime(t);
 
 		var investor = accounts[1];

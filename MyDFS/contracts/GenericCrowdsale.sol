@@ -10,7 +10,7 @@ contract GenericCrowdsale is Ownable {
     using SafeMath for uint256;
 
     //Crowrdsale states
-    enum State { Initialized, PreIco, Ico }
+    enum State { Initialized, PreIco, PreIcoFinished, Ico, IcoFinished}
 
     struct Discount {
         uint256 amount;
@@ -27,14 +27,14 @@ contract GenericCrowdsale is Ownable {
     uint public softFundingGoal;
     //gathered Ether amount in Wei
     uint public amountRaised;
-    //ICO/PreICO finish timestamp in seconds
-    uint public deadline;
     //ICO/PreICO start timestamp in seconds
     uint public started;
     //Crowdsale finish time
     uint public finishTime;
     //price for 1 token in Wei
     uint public price;
+    //minimum purchase value in Wei
+    uint public minPurchase;
     //Token cantract
     ERC223 public tokenReward;
     //Wei balances for refund if ICO failed
@@ -67,13 +67,12 @@ contract GenericCrowdsale is Ownable {
     modifier sellActive() { 
         require(
             !emergencyPaused 
-            && state > State.Initialized
-            && now < deadline 
+            && (state == State.PreIco || state == State.Ico)
             && amountRaised < hardFundingGoal
         );
     _; }
     //Soft cap not reached
-    modifier goalNotReached() { require(state == State.Ico && amountRaised < softFundingGoal && now > deadline); _; }
+    modifier goalNotReached() { require(state == State.IcoFinished && amountRaised < softFundingGoal); _; }
 
     /**
      * Constrctor function
@@ -105,7 +104,7 @@ contract GenericCrowdsale is Ownable {
      */
     function preIco(
         uint hardFundingGoalInEthers,
-        uint durationInSeconds,
+        uint minPurchaseInFinney,
         uint costOfEachToken,
         uint256[] discountEthers,
         uint256[] discountValues
@@ -114,18 +113,16 @@ contract GenericCrowdsale is Ownable {
         onlyOwner 
     {
         require(hardFundingGoalInEthers > 0
-            && durationInSeconds > 0
             && costOfEachToken > 0
             && state == State.Initialized
             && discountEthers.length == discountValues.length);
 
         hardFundingGoal = hardFundingGoalInEthers.mul(1 ether);
-        deadline = now.add(durationInSeconds.mul(1 seconds));
-        started = now;
-        finishTime = deadline;
+        minPurchase = minPurchaseInFinney.mul(1 finney);
         price = costOfEachToken;
         initDiscounts(discountEthers, discountValues);
         state = State.PreIco;
+        started = now;
     }
 
     /**
@@ -134,7 +131,7 @@ contract GenericCrowdsale is Ownable {
     function ico(
         uint softFundingGoalInEthers,
         uint hardFundingGoalInEthers,
-        uint durationInSeconds,
+        uint minPurchaseInFinney,
         uint costOfEachToken,
         uint256[] discountEthers,
         uint256[] discountValues
@@ -145,20 +142,30 @@ contract GenericCrowdsale is Ownable {
         require(softFundingGoalInEthers > 0
             && hardFundingGoalInEthers > 0
             && hardFundingGoalInEthers > softFundingGoalInEthers
-            && durationInSeconds > 0
             && costOfEachToken > 0
             && state < State.Ico
             && discountEthers.length == discountValues.length);
 
         softFundingGoal = softFundingGoalInEthers.mul(1 ether);
         hardFundingGoal = hardFundingGoalInEthers.mul(1 ether);
-        deadline = now.add(durationInSeconds.mul(1 seconds));
-        started = now;
-        finishTime = deadline;
+        minPurchase = minPurchaseInFinney.mul(1 finney);
         price = costOfEachToken;
         delete discounts;
         initDiscounts(discountEthers, discountValues);
         state = State.Ico;
+        started = now;
+    }
+
+    /**
+     * Finish ICO / PreICO
+     */
+    function finishSale() external onlyOwner {
+        require(state == State.PreIco || state == State.Ico);
+        
+        if (state == State.PreIco)
+            state = State.PreIcoFinished;
+        else
+            state = State.IcoFinished;
     }
 
     /**
@@ -264,18 +271,26 @@ contract GenericCrowdsale is Ownable {
 
         uint256 passedSeconds = getTime().sub(started);
         uint256 week = 0;
-        if (passedSeconds >= 604800)
+        if (passedSeconds >= 604800){
             week = passedSeconds.div(604800);
+        }
+        Debug(week);
 
         uint256 tokenPrice;
         if (state == State.Ico){
             uint256 cup = amountRaised.mul(4).div(hardFundingGoal);
             if (cup > week)
                 week = cup;
+            if (week >= 4)
+                 week = 3;
             tokenPrice = price.mul(icoTokenPrice[week]).div(100);
-        } else{
+        } else {
+            if (week >= 2)
+                 week = 1;
             tokenPrice = price.mul(preIcoTokenPrice[week]).div(100);
         }
+
+        Debug(tokenPrice);
 
         uint256 count = amount.div(tokenPrice);
         uint256 discount = getDiscountOf(amount);
@@ -285,7 +300,7 @@ contract GenericCrowdsale is Ownable {
         require(tokenReward.transfer(user, count));
         balances[user] = balances[user].add(amount);
         amountRaised = amountRaised.add(amount);
-        TokenPurchased(msg.sender, amount, count, discountBonus);
+        TokenPurchased(user, amount, count, discountBonus);
     }
 
     /**
@@ -296,7 +311,7 @@ contract GenericCrowdsale is Ownable {
         view 
         returns(bool) 
     {
-        return (state == State.Ico) && ((now >= deadline && amountRaised >= softFundingGoal) || amountRaised >= hardFundingGoal);
+        return state == State.IcoFinished && amountRaised >= softFundingGoal;
     }
 
     /**
@@ -337,6 +352,7 @@ contract GenericCrowdsale is Ownable {
         if (state == State.PreIco) {
             if (amountRaised >= hardFundingGoal) {
                 PreIcoLimitReached(amountRaised);
+                state = State.PreIcoFinished;
             }
         } else {
             if (!softCapReached && amountRaised >= softFundingGoal){
@@ -346,6 +362,7 @@ contract GenericCrowdsale is Ownable {
             if (amountRaised >= hardFundingGoal) {
                 finishTime = now;
                 HardGoalReached(amountRaised);
+                state = State.IcoFinished;
             }
         }
     }
