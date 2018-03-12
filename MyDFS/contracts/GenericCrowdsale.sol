@@ -249,6 +249,7 @@ contract GenericCrowdsale is Ownable {
         sellActive
     {
         require(msg.value > 0);
+        require(msg.value >= minPurchase);
         uint amount = msg.value;
         if (amount > hardFundingGoal.sub(amountRaised)) {
             uint availableAmount = hardFundingGoal.sub(amountRaised);
